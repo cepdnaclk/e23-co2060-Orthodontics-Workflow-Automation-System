@@ -24,9 +24,17 @@
   ],
   "supervisors": [
     {
-      "name": "Dr. Supervisor 1",
-      "email": "email@eng.pdn.ac.lk"
+      "name": "Dr. Asitha Bandaranayake",
+      "email": "asithab@eng.pdn.ac.lk"
+    },
+    {
+      "name": "Dr. H.S.K. Ratnatilake",
+      "email": "ksandamala2002@dental.pdn.ac.lk"
+    },
+    {
+      "name": "Dr. D.D. Vithanachchi",
+      "email": "dinakad@dental.pdn.ac.lk"
     }
   ],
-  "tags": ["Web", "Software Systems", "CO2060", "Health Informatics", "MySQL", "Node.js"]
+  "tags": ["Web", "Software Systems", "CO2060"]
 }
