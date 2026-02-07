@@ -1,32 +1,32 @@
 {
-    "team": [
-        {
-            "name": "Team Member Name 1",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
-        },
-        {
-            "name": "Team Member Name 2",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
-        },
-        {
-            "name": "Team Member Name 3",
-            "email": "email@eng.pdn.ac.lk",
-            "eNumber": "E/yy/xxx"
-        }
-    ],
-    "supervisors": [
-        {
-            "name": "Dr. Supervisor 1",
-            "email": "email@eng.pdn.ac.lk"
-        },
-        {
-            "name": "Supervisor 2",
-            "email": "email@eng.pdn.ac.lk"
-        }
-    ],
-    "tags": ["Web", "Software Systems", "CO2060"],
-    "image":"cover_page.jpg",
-    "thumbnail":"thumbnail.jpg"
+  "title": "Orthodontics Workflow Automation System (OWAS)",
+  "team": [
+    {
+      "name": "R.K. Kulasooriya",
+      "email": "e23182@eng.pdn.ac.lk",
+      "eNumber": "E/23/182"
+    },
+    {
+      "name": "K.S. Rambukkanage",
+      "email": "e23292@eng.pdn.ac.lk",
+      "eNumber": "E/23/292"
+    },
+    {
+      "name": "R.D.K.D. Ranasinghe",
+      "email": "e23299@eng.pdn.ac.lk",
+      "eNumber": "E/23/299"
+    },
+    {
+      "name": "T.G.D. Randeep",
+      "email": "e23302@eng.pdn.ac.lk",
+      "eNumber": "E/23/302"
+    }
+  ],
+  "supervisors": [
+    {
+      "name": "Dr. Supervisor 1",
+      "email": "email@eng.pdn.ac.lk"
+    }
+  ],
+  "tags": ["Web", "Software Systems", "CO2060", "Health Informatics", "MySQL", "Node.js"]
 }
