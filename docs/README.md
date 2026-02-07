@@ -36,9 +36,9 @@ Orthodontics Workflow Automation System
 <!-- ![Sample Image](./images/sample.png) -->
 
 ## Supervisors
-- **Dr. Asitha Bandaranayake** - [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
-- **Dr. H.S.K. Ratnatilake** - [ksandamala2002@dental.pdn.ac.lk](mailto:ksandamala2002@dental.pdn.ac.lk)
-- **Dr. D.D. Vithanachchi** - [dinakad@dental.pdn.ac.lk](mailto:dinakad@dental.pdn.ac.lk)
+- Dr. Asitha Bandaranayake - [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
+- Dr. H.S.K. Ratnatilake - [ksandamala2002@dental.pdn.ac.lk](mailto:ksandamala2002@dental.pdn.ac.lk)
+- Dr. D.D. Vithanachchi - [dinakad@dental.pdn.ac.lk](mailto:dinakad@dental.pdn.ac.lk)
 
 ## Table of Contents
 1. [Introduction](#introduction)
