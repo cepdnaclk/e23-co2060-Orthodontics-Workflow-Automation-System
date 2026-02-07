@@ -3,8 +3,8 @@ layout: home
 permalink: index.html
 
 # Please update this with your repository name and project title
-repository-name: eYY-co2060-project-template
-title: Project Template
+repository-name: e23-co2060-Orthodontics-Workflow-Automation-System
+title: Orthodontics Workflow Automation System
 ---
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template, and add more information required for your own project"
@@ -21,12 +21,13 @@ A HTML template integrated with the given GitHub repository templates, based on 
 
 # Project Title
 
----
+Orthodontics Workflow Automation System
 
 ## Team
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
+-  E/23/182, R.K. Kulasooriya, [email](mailto:e23182@eng.pdn.ac.lk)
+-  E/23/292, K.S. Rambukkanage, [email](mailto:e23292@eng.pdn.ac.lk)
+-  E/23/299, R.D.K.D. Ranasinghe, [email](mailto:e23299@eng.pdn.ac.lk)
+-  E/23/302, T.G.D. Randeep, [email](mailto:e23302@eng.pdn.ac.lk)
 
 <!-- Image (photo/drawing of the final hardware) should be here -->
 
