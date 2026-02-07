@@ -8,10 +8,10 @@ Built with a modular and scalable architecture, OWAS is designed for future-read
 
 ## Links
 
-- [Project Repository](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System){:target="_blank" rel="noopener"}
-- [Project Page](https://cepdnaclk.github.io/e23-co2060-Orthodontics-Workflow-Automation-System){:target="_blank" rel="noopener"}
-- [Department of Computer Engineering](http://www.ce.pdn.ac.lk/){:target="_blank" rel="noopener"}
-- [University of Peradeniya](https://eng.pdn.ac.lk/){:target="_blank" rel="noopener"}
+- [Project Repository](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System)
+- [Project Page](https://cepdnaclk.github.io/e23-co2060-Orthodontics-Workflow-Automation-System)
+- [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
+- [University of Peradeniya](https://eng.pdn.ac.lk/)
 
 ---
 
@@ -24,9 +24,3 @@ Built with a modular and scalable architecture, OWAS is designed for future-read
 ## Supervisors
 - **Dr. Supervisor 1** - [email@eng.pdn.ac.lk](mailto:email@eng.pdn.ac.lk)
 - **Supervisor 2** - [email@eng.pdn.ac.lk](mailto:email@eng.pdn.ac.lk)
-
----
-
-### Special Configurations
-
-These projects are automatically added to the Department Project Portal. Details are managed via the `docs/index.json` file.
