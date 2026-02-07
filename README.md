@@ -16,11 +16,10 @@ Built with a modular and scalable architecture, OWAS is designed for future-read
 ---
 
 ## Team
-- **Member 1 Name** - [E/xx/xxx](mailto:email@eng.pdn.ac.lk)
-- **Member 2 Name** - [E/xx/xxx](mailto:email@eng.pdn.ac.lk)
-- **Member 3 Name** - [E/xx/xxx](mailto:email@eng.pdn.ac.lk)
-- **Member 4 Name** - [E/xx/xxx](mailto:email@eng.pdn.ac.lk)
+-  E/23/182, R.K. Kulasooriya, [email](mailto:e23182@eng.pdn.ac.lk)
+-  E/23/292, K.S. Rambukkanage, [email](mailto:e23292@eng.pdn.ac.lk)
+-  E/23/299, R.D.K.D. Ranasinghe, [email](mailto:e23299@eng.pdn.ac.lk)
+-  E/23/302, T.G.D. Randeep, [email](mailto:e23302@eng.pdn.ac.lk)
 
 ## Supervisors
-- **Dr. Supervisor 1** - [email@eng.pdn.ac.lk](mailto:email@eng.pdn.ac.lk)
-- **Supervisor 2** - [email@eng.pdn.ac.lk](mailto:email@eng.pdn.ac.lk)
+- **Dr. Asitha Bandaranayake** - [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
