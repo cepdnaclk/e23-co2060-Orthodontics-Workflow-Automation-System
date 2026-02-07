@@ -40,7 +40,7 @@ Orthodontics Workflow Automation System
 - **Dr. H.S.K. Ratnatilake** - [ksandamala2002@dental.pdn.ac.lk](mailto:ksandamala2002@dental.pdn.ac.lk)
 - **Dr. D.D. Vithanachchi** - [dinakad@dental.pdn.ac.lk](mailto:dinakad@dental.pdn.ac.lk)
 
-#### Table of Contents
+## Table of Contents
 1. [Introduction](#introduction)
 2. [Solution Architecture](#solution-architecture )
 3. [Software Designs](#hardware-and-software-designs)
