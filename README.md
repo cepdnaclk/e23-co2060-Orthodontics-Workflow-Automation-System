@@ -4,17 +4,6 @@ The **Orthodontics Workflow Automation System (OWAS)** is a web-based clinical m
 
 Built with a modular and scalable architecture, OWAS is designed for future-readiness, allowing the system to expand and integrate with other clinical units across the Dental Hospital. This project aims to improve operational efficiency and diagnostic accuracy by bridging the gap between traditional clinical practices and modern health informatics.
 
----
-
-## Links
-
-- [Project Repository](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System)
-- [Project Page](https://cepdnaclk.github.io/e23-co2060-Orthodontics-Workflow-Automation-System)
-- [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
-- [University of Peradeniya](https://eng.pdn.ac.lk/)
-
----
-
 ## Team
 -  E/23/182, R.K. Kulasooriya, [email](mailto:e23182@eng.pdn.ac.lk)
 -  E/23/292, K.S. Rambukkanage, [email](mailto:e23292@eng.pdn.ac.lk)
@@ -25,3 +14,10 @@ Built with a modular and scalable architecture, OWAS is designed for future-read
 - Dr. Asitha Bandaranayake - [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
 - Dr. H.S.K. Ratnatilake - [ksandamala2002@dental.pdn.ac.lk](mailto:ksandamala2002@dental.pdn.ac.lk)
 - Dr. D.D. Vithanachchi - [dinakad@dental.pdn.ac.lk](mailto:dinakad@dental.pdn.ac.lk)
+
+## Links
+
+- [Project Repository](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System)
+- [Project Page](https://cepdnaclk.github.io/e23-co2060-Orthodontics-Workflow-Automation-System)
+- [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
+- [University of Peradeniya](https://eng.pdn.ac.lk/)
