@@ -22,6 +22,6 @@ Built with a modular and scalable architecture, OWAS is designed for future-read
 -  E/23/302, T.G.D. Randeep, [email](mailto:e23302@eng.pdn.ac.lk)
 
 ## Supervisors
-- **Dr. Asitha Bandaranayake** - [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
-- **Dr. H.S.K. Ratnatilake** - [ksandamala2002@dental.pdn.ac.lk](mailto:ksandamala2002@dental.pdn.ac.lk)
-- **Dr. D.D. Vithanachchi** - [dinakad@dental.pdn.ac.lk](mailto:dinakad@dental.pdn.ac.lk)
+- Dr. Asitha Bandaranayake - [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
+- Dr. H.S.K. Ratnatilake - [ksandamala2002@dental.pdn.ac.lk](mailto:ksandamala2002@dental.pdn.ac.lk)
+- Dr. D.D. Vithanachchi - [dinakad@dental.pdn.ac.lk](mailto:dinakad@dental.pdn.ac.lk)
