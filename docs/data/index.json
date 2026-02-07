@@ -36,5 +36,7 @@
       "email": "dinakad@dental.pdn.ac.lk"
     }
   ],
-  "tags": ["Web", "Software Systems", "CO2060"]
+  "tags": ["Web", "Software Systems", "CO2060"],
+  "image":"cover_page.jpg",
+  "thumbnail":"thumbnail.jpg"
 }
