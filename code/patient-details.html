@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Patient Details</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a class="active" href="patients.html">Patients</a>
+        <a href="appointments.html">Appointments</a>
+        <a href="queue.html">Queue</a>
+        <a href="reports.html">Reports</a>
+        <a href="logbook.html">Logbook</a>
+        <a href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1>Patient Details</h1>
+        <a href="patients.html">Back to list</a>
+      </div>
+
+      <section class="card" id="patientDetailsCard"></section>
+
+      <section class="card" data-permission="patients.write">
+        <h2>Update Patient</h2>
+        <form id="patientUpdateForm" class="grid">
+          <label class="col-6">Full Name<input id="uFullName" required /></label>
+          <label class="col-6">Phone<input id="uPhone" /></label>
+          <label class="col-6">Address<input id="uAddress" /></label>
+          <label class="col-6">Medical History<textarea id="uMedicalHistory"></textarea></label>
+          <div class="col-12"><button type="submit">Update</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Create Visit</h2>
+        <form id="visitForm" class="grid">
+          <label class="col-4">Visit Date<input id="visitDate" type="datetime-local" required /></label>
+          <label class="col-8">Chief Complaint<input id="chiefComplaint" /></label>
+          <div class="col-12"><button type="submit">Create Visit</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Visit History</h2>
+        <table>
+          <thead><tr><th>Date</th><th>Chief Complaint</th><th>Status</th><th>Dental Chart</th></tr></thead>
+          <tbody id="visitsTbody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { applyPermissionVisibility } from './js/rbac.js';
+    import { initPatientDetailsPage } from './js/patients.js';
+
+    const ctx = await protectPage();
+    if (ctx) {
+      applyPermissionVisibility(ctx.profile.role);
+      initPatientDetailsPage(ctx.profile);
+    }
+  </script>
+</body>
+</html>

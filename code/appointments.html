@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Appointments</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="patients.html">Patients</a>
+        <a class="active" href="appointments.html">Appointments</a>
+        <a href="queue.html">Queue</a>
+        <a href="reports.html">Reports</a>
+        <a href="logbook.html">Logbook</a>
+        <a href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1>Appointments</h1>
+        <button id="sendRemindersBtn" class="warning">Trigger Email Reminders</button>
+      </div>
+
+      <section class="card">
+        <h2>Schedule Appointment</h2>
+        <form id="appointmentForm" class="grid">
+          <label class="col-4">Patient ID<input id="appointmentPatientId" required /></label>
+          <label class="col-4">Appointment At<input id="appointmentAt" type="datetime-local" required /></label>
+          <label class="col-4">Reason<input id="appointmentReason" /></label>
+          <div class="col-12"><button type="submit">Create Appointment</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Upcoming Appointments</h2>
+        <table>
+          <thead><tr><th>Clinic #</th><th>Patient</th><th>Date Time</th><th>Status</th><th>Reminder</th><th>Actions</th></tr></thead>
+          <tbody id="appointmentsTbody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { initAppointmentsPage } from './js/appointments.js';
+
+    const ctx = await protectPage();
+    if (ctx) initAppointmentsPage(ctx.profile);
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Patients</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a class="active" href="patients.html">Patients</a>
+        <a href="appointments.html">Appointments</a>
+        <a href="queue.html">Queue</a>
+        <a href="reports.html">Reports</a>
+        <a href="logbook.html">Logbook</a>
+        <a href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar"><h1>Patients</h1></div>
+
+      <section class="card" data-permission="patients.write">
+        <h2>Add Patient</h2>
+        <form id="patientForm" class="grid">
+          <label class="col-4">Clinic Number<input id="clinicNumber" required /></label>
+          <label class="col-4">Full Name<input id="fullName" required /></label>
+          <label class="col-4">Date of Birth<input id="dob" type="date" /></label>
+          <label class="col-4">Sex<select id="sex"><option>Male</option><option>Female</option><option>Other</option></select></label>
+          <label class="col-4">Phone<input id="phone" /></label>
+          <label class="col-4">Email<input id="patientEmail" type="email" /></label>
+          <label class="col-6">Address<input id="address" /></label>
+          <label class="col-6">Medical History<textarea id="medicalHistory"></textarea></label>
+          <div class="col-12"><button type="submit">Save Patient</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="topbar">
+          <h2>Patient List</h2>
+          <input id="patientSearch" placeholder="Search by name" />
+        </div>
+        <table>
+          <thead>
+            <tr><th>Clinic #</th><th>Name</th><th>DOB</th><th>Phone</th><th>Created</th></tr>
+          </thead>
+          <tbody id="patientsTbody"></tbody>
+        </table>
+        <div class="topbar">
+          <div class="actions">
+            <button id="prevPageBtn" class="secondary">Prev</button>
+            <button id="nextPageBtn" class="secondary">Next</button>
+          </div>
+          <p id="patientsPager" class="footer-note"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { applyPermissionVisibility } from './js/rbac.js';
+    import { initPatientsPage } from './js/patients.js';
+
+    const ctx = await protectPage();
+    if (ctx) {
+      applyPermissionVisibility(ctx.profile.role);
+      initPatientsPage(ctx.profile);
+    }
+  </script>
+</body>
+</html>

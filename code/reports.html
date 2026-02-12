@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Reports</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="patients.html">Patients</a>
+        <a href="appointments.html">Appointments</a>
+        <a href="queue.html">Queue</a>
+        <a class="active" href="reports.html">Reports</a>
+        <a href="logbook.html">Logbook</a>
+        <a href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar"><h1>Clinical Reports</h1></div>
+
+      <section class="card">
+        <div class="grid">
+          <label class="col-4">Type
+            <select id="reportType">
+              <option value="Daily">Daily</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Annual">Annual</option>
+            </select>
+          </label>
+          <label class="col-4">From<input id="reportFrom" type="date" required /></label>
+          <label class="col-4">To<input id="reportTo" type="date" required /></label>
+          <div class="col-12 actions">
+            <button id="generateReportBtn">Generate</button>
+            <button id="exportCsvBtn" class="secondary">Export CSV</button>
+            <button id="exportPdfBtn" class="warning">Export PDF</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <table>
+          <thead><tr><th>Report Type</th><th>From</th><th>To</th><th>Clinician</th><th>Total Cases</th></tr></thead>
+          <tbody id="reportsTbody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { initReportsPage } from './js/reports.js';
+
+    const ctx = await protectPage();
+    if (ctx) initReportsPage(ctx.profile);
+  </script>
+</body>
+</html>

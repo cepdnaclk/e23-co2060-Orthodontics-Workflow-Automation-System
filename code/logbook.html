@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Logbook</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="patients.html">Patients</a>
+        <a href="appointments.html">Appointments</a>
+        <a href="queue.html">Queue</a>
+        <a href="reports.html">Reports</a>
+        <a class="active" href="logbook.html">Logbook</a>
+        <a href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar"><h1>Student Cases & Digital Logbook</h1></div>
+
+      <section class="card">
+        <h2>Submit Student Case</h2>
+        <form id="studentCaseForm" class="grid">
+          <label class="col-6">Case Title<input id="caseTitle" required /></label>
+          <label class="col-6">Description<textarea id="caseDescription" required></textarea></label>
+          <div class="col-12"><button type="submit">Submit Case</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Case Approval Workflow</h2>
+        <table>
+          <thead><tr><th>Title</th><th>Student</th><th>Status</th><th>Created</th><th>Action</th></tr></thead>
+          <tbody id="studentCasesTbody"></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Log Procedure</h2>
+        <form id="logbookForm" class="grid">
+          <label class="col-4">Procedure Name<input id="procedureName" required /></label>
+          <label class="col-4">Procedure Date<input id="procedureDate" type="date" required /></label>
+          <label class="col-4">Details<textarea id="procedureDetails"></textarea></label>
+          <div class="col-12"><button type="submit">Add Entry</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Logbook Entries</h2>
+        <table>
+          <thead><tr><th>Procedure</th><th>Student</th><th>Date</th><th>Status</th><th>Verify</th></tr></thead>
+          <tbody id="logbookTbody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { initLogbookPage } from './js/logbook.js';
+
+    const ctx = await protectPage();
+    if (ctx) initLogbookPage(ctx.profile);
+  </script>
+</body>
+</html>
