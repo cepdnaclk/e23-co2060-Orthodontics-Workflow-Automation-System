@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Queue</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="patients.html">Patients</a>
+        <a href="appointments.html">Appointments</a>
+        <a class="active" href="queue.html">Queue</a>
+        <a href="reports.html">Reports</a>
+        <a href="logbook.html">Logbook</a>
+        <a href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar"><h1>Live Clinic Queue</h1></div>
+
+      <section class="card">
+        <h2>Add to Queue</h2>
+        <form id="queueForm" class="grid">
+          <label class="col-6">Patient ID<input id="queuePatientId" required /></label>
+          <label class="col-6">Priority (1-5)<input id="queuePriority" type="number" min="1" max="5" value="1" /></label>
+          <div class="col-12"><button type="submit">Add</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Realtime Queue Board</h2>
+        <table>
+          <thead><tr><th>Patient</th><th>Status</th><th>Priority</th><th>Arrived</th><th>Actions</th></tr></thead>
+          <tbody id="queueTbody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { initQueuePage } from './js/queue.js';
+
+    const ctx = await protectPage();
+    if (ctx) initQueuePage(ctx.profile);
+  </script>
+</body>
+</html>

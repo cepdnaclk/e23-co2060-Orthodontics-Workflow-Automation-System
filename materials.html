@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Materials</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="patients.html">Patients</a>
+        <a href="appointments.html">Appointments</a>
+        <a href="queue.html">Queue</a>
+        <a href="reports.html">Reports</a>
+        <a href="logbook.html">Logbook</a>
+        <a class="active" href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar"><h1>Materials Tracking</h1></div>
+
+      <section class="card">
+        <h2>Add Material</h2>
+        <form id="materialsForm" class="grid">
+          <label class="col-4">Name<input id="materialName" required /></label>
+          <label class="col-4">Current Stock<input id="materialStock" type="number" min="0" required /></label>
+          <label class="col-4">Threshold<input id="materialThreshold" type="number" min="0" required /></label>
+          <div class="col-12"><button type="submit">Save Material</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Log Material Usage</h2>
+        <form id="materialUsageForm" class="grid">
+          <label class="col-4">Material ID<input id="usageMaterialId" required /></label>
+          <label class="col-4">Used Qty<input id="usageQty" type="number" min="1" required /></label>
+          <label class="col-4">Notes<textarea id="usageNotes"></textarea></label>
+          <div class="col-12"><button type="submit">Record Usage</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Stock Overview</h2>
+        <table>
+          <thead><tr><th>Name</th><th>Current Stock</th><th>Threshold</th><th>Updated</th><th>Status</th></tr></thead>
+          <tbody id="materialsTbody"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { initMaterialsPage } from './js/materials.js';
+
+    const ctx = await protectPage();
+    if (ctx) initMaterialsPage(ctx.profile);
+  </script>
+</body>
+</html>

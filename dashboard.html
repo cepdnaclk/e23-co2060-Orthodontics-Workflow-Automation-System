@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OWAS | Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">OWAS</div>
+      <div class="user-chip" id="userLabel">Loading user...</div>
+      <nav class="nav">
+        <a class="active" href="dashboard.html">Dashboard</a>
+        <a href="patients.html">Patients</a>
+        <a href="appointments.html">Appointments</a>
+        <a href="queue.html">Queue</a>
+        <a href="reports.html">Reports</a>
+        <a href="logbook.html">Logbook</a>
+        <a href="materials.html">Materials</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+      <div class="actions" style="margin-top:14px;"><button id="logoutBtn" class="danger">Logout</button></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1>Clinic Dashboard</h1>
+      </div>
+
+      <section class="grid">
+        <article class="col-3 metric"><h3>Total Patients</h3><p id="mPatients">0</p></article>
+        <article class="col-3 metric"><h3>Open Queue</h3><p id="mQueue">0</p></article>
+        <article class="col-3 metric"><h3>Today Appointments</h3><p id="mAppointments">0</p></article>
+        <article class="col-3 metric"><h3>Low Materials</h3><p id="mLowStock">0</p></article>
+      </section>
+
+      <section class="card">
+        <h2>Today Queue</h2>
+        <table>
+          <thead><tr><th>Patient</th><th>Status</th><th>Priority</th></tr></thead>
+          <tbody id="queuePreview"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { protectPage } from './js/auth.js';
+    import { sb, showToast } from './js/supabaseClient.js';
+    import { applyPermissionVisibility } from './js/rbac.js';
+
+    const boot = async () => {
+      const ctx = await protectPage();
+      if (!ctx) return;
+      applyPermissionVisibility(ctx.profile.role);
+
+      const [{ count: pCount }, { count: qCount }, { count: aCount }, { data: lowStock }] = await Promise.all([
+        sb.from('patients').select('id', { head: true, count: 'exact' }),
+        sb.from('queue').select('id', { head: true, count: 'exact' }).in('status', ['Open', 'Waiting']),
+        sb.from('appointments').select('id', { head: true, count: 'exact' }).gte('appointment_at', new Date().toISOString().slice(0,10)).lte('appointment_at', new Date().toISOString().slice(0,10) + 'T23:59:59'),
+        sb.from('materials').select('id,current_stock,threshold')
+      ]);
+
+      document.getElementById('mPatients').textContent = pCount || 0;
+      document.getElementById('mQueue').textContent = qCount || 0;
+      document.getElementById('mAppointments').textContent = aCount || 0;
+      document.getElementById('mLowStock').textContent = (lowStock || []).filter(m => Number(m.current_stock) <= Number(m.threshold)).length;
+
+      const { data: queue } = await sb.from('queue').select('id,status,priority,patients(full_name)').order('priority', { ascending: false }).limit(8);
+      document.getElementById('queuePreview').innerHTML = (queue || []).map(q => `<tr><td>${q.patients?.full_name || '-'}</td><td>${q.status}</td><td>${q.priority}</td></tr>`).join('');
+    };
+
+    boot().catch(err => showToast(err.message, 'error'));
+  </script>
+</body>
+</html>
