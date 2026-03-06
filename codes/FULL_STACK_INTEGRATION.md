@@ -303,29 +303,7 @@ Minimum integration verification after startup:
 6. Confirm queue, materials, or reports based on role
 7. If Google Sign-In is configured, verify the Google button renders and sign-in completes
 
-## 14. Regression Coverage
-
-Repository-root test coverage includes API and Playwright scripts such as:
-
-- auth and RBAC
-- patient management
-- appointments and reminders
-- dental chart versions
-- document upload and trash flows
-- audit log APIs and page
-- dashboard, queue, materials, reports, and settings flows
-
-Run the full suite from repo root:
-
-```bash
-node test-run-all-valid.js
-```
-
-Latest report output path:
-
-- `test-report-full-latest.txt`
-
-## 15. Current Constraints
+## 14. Current Constraints
 
 These are important for anyone treating this as the latest deployment guide:
 
