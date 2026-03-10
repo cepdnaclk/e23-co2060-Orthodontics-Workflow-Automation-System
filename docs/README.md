@@ -42,32 +42,47 @@ Orthodontics Workflow Automation System
 
 ## Table of Contents
 1. [Introduction](#introduction)
-2. [Solution Architecture](#solution-architecture )
-3. [Software Designs](#hardware-and-software-designs)
+2. [Solution Architecture](#solution-architecture)
+3. [Software Designs](#software-designs)
 4. [Testing](#testing)
 5. [Conclusion](#conclusion)
 6. [Links](#links)
 
 ## Introduction
 
-Description of the real world problem and solution, impact
+Orthodontic clinics still depend heavily on paper files, fragmented patient histories, and manual coordination between clinicians, students, and administrative staff. This leads to delays in record retrieval, duplicated effort, limited traceability, and reduced visibility into treatment progress and clinic operations.
+
+The Orthodontics Workflow Automation System addresses this by centralizing patient records, visits, clinical notes, diagnostic context, documents, approvals, and operational reporting into a single web platform. The resulting system improves continuity of care, supports role-based collaboration, and provides a stronger digital foundation for future expansion within the Dental Hospital environment.
 
 
 ## Solution Architecture
 
-High level diagram + description
+The implemented solution follows a web-based client-server architecture. The backend in `codes/Backend` provides a REST API built with Express and MySQL, handling authentication, authorization, validation, persistence, file uploads, reminders, and audit-related workflows. The frontend in `codes/Frontend` is a React and Vite application that consumes those APIs and presents role-aware interfaces for administrators, clinicians, students, nurses, and reception staff.
+
+At the system level, the main architectural elements are:
+
+- a MySQL-backed backend service for business logic and data management
+- a React frontend for browser-based clinical and administrative workflows
+- JWT-based authentication with refresh-token support and inactivity timeout handling
+- supporting services for email notifications, document handling, and audit-retention processing
 
 ## Software Designs
 
-Detailed designs with many sub-sections
+The software design is organized around the major workflows required in an orthodontic clinical setting. The backend exposes dedicated route and controller layers for authentication, patients, visits, queue handling, documents, clinical notes, cases, inventory, users, and reports. Validation and access-control middleware are used to enforce input quality and role-based restrictions across these modules.
+
+On the frontend, the application is structured around route-based pages and reusable components. Current implemented designs cover the dashboard, patient directory, detailed patient profiles, dental-chart and document views, queue management, student case handling, inventory workflows, administrative reporting, audit-log review, and approval requests for clinician assignment changes.
 
 ## Testing
 
-Testing done on software : detailed + summarized results
+Testing has been carried out through iterative functional verification of both backend APIs and frontend workflows. The current repository includes working implementations for authentication, patient management, queue operations, inventory actions, reports, audit-log access, and role-specific navigation and authorization behavior.
+
+In addition to local execution checks, the system has been validated through endpoint health checks, seeded-account login flows, patient and queue operations, administrative workflows, and frontend route coverage for the currently implemented pages. This has helped confirm that the main operational flows work together as an integrated full-stack system.
 
 ## Conclusion
 
-What was achieved, future developments, commercialization plans
+The project has established a working digital workflow platform for orthodontic clinic operations, replacing key manual processes with a centralized web-based system. The current implementation already supports patient-centered clinical work, administrative control, operational reporting, and role-aware collaboration across multiple user groups.
+
+Future development can extend the system with broader deployment support, additional analytics, richer document and imaging workflows, tighter integration with external clinical systems, and further usability improvements for real-world institutional use.
 
 ## Links
 
