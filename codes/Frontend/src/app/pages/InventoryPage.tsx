@@ -559,8 +559,14 @@ export function InventoryPage() {
           <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <h3 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Material' : 'Add Material'}</h3>
-              <Button type="button" variant="secondary" size="icon" className="h-9 w-9" onClick={closeEditor}>
-                <X className="w-4 h-4" />
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className="h-10 w-10 border border-red-200 bg-red-50 text-red-600 hover:border-red-300 hover:bg-red-100 active:bg-red-200"
+                onClick={closeEditor}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
             <div className="max-h-[calc(90vh-73px)] overflow-y-auto px-6 py-5">
@@ -637,7 +643,13 @@ export function InventoryPage() {
           <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <h3 className="text-lg font-bold text-slate-900">Restock Material</h3>
-              <Button type="button" variant="secondary" size="icon" className="h-9 w-9" onClick={closeRestockModal}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className="h-10 w-10 border border-red-200 bg-red-50 text-red-600 hover:border-red-300 hover:bg-red-100 active:bg-red-200"
+                onClick={closeRestockModal}
+              >
                 <X className="w-4 h-4" />
               </Button>
             </div>

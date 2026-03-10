@@ -106,15 +106,9 @@ Current helper behavior:
 
 ## 6. Login After Seeding
 
-Default seeded accounts include:
+Default seeded account:
 
-- `admin@orthoflow.edu` / `admin123`
-- `sarah.johnson@orthoflow.edu` / `doctor123`
-- `michael.chen@orthoflow.edu` / `doctor123`
-- `emily.wilson@orthoflow.edu` / `nurse123`
-- `alex.thompson@orthoflow.edu` / `student123`
-- `maria.garcia@orthoflow.edu` / `student123`
-- `lisa.brown@orthoflow.edu` / `reception123`
+- `admin@orthoflow.edu` / `Jk@xditc4`
 
 ## 7. Google Sign-In
 
@@ -171,15 +165,3 @@ Check these after startup:
 3. sign in with a seeded account
 4. open patients, queue, or materials depending on role
 5. for admin, verify reports and audit log pages load
-
-## 11. Full Regression
-
-From repo root:
-
-```bash
-node test-run-all-valid.js
-```
-
-Report output:
-
-- `test-report-full-latest.txt`

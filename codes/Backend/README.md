@@ -89,23 +89,7 @@ npm run seed
 
 Current seed script creates:
 
-- `admin@orthoflow.edu` / `admin123`
-- `sarah.johnson@orthoflow.edu` / `doctor123`
-- `michael.chen@orthoflow.edu` / `doctor123`
-- `emily.wilson@orthoflow.edu` / `nurse123`
-- `alex.thompson@orthoflow.edu` / `student123`
-- `maria.garcia@orthoflow.edu` / `student123`
-- `lisa.brown@orthoflow.edu` / `reception123`
-
-## Testing
-
-Project-level regression scripts live at repository root.
-
-Run full validation from root:
-
-```bash
-node test-run-all-valid.js
-```
+- `admin@orthoflow.edu` / `Jk@xditc4`
 
 ## Notes
 

@@ -1,6 +1,6 @@
 # OrthoFlow Full-Stack Integration Guide
 
-This document reflects the current repository state as of March 6, 2026.
+This document reflects the current repository state as of March 10, 2026.
 
 ## 1. Current Stack
 
@@ -29,9 +29,7 @@ Orthodontics Workflow Automation System/
 ├── Frontend/
 │   ├── .env.example
 │   └── src/app/
-├── start-orthoflow.sh
-├── test-run-all-valid.js
-└── test-*.js
+└── start-orthoflow.sh
 ```
 
 ## 3. Backend Integration Surface
@@ -232,15 +230,9 @@ Current helper-script behavior:
 
 ## 9. Seeded Local Accounts
 
-`Backend/scripts/seed.js` currently creates these baseline users:
+`Backend/scripts/seed.js` currently creates this baseline user:
 
-- `admin@orthoflow.edu` / `admin123`
-- `sarah.johnson@orthoflow.edu` / `doctor123`
-- `michael.chen@orthoflow.edu` / `doctor123`
-- `emily.wilson@orthoflow.edu` / `nurse123`
-- `alex.thompson@orthoflow.edu` / `student123`
-- `maria.garcia@orthoflow.edu` / `student123`
-- `lisa.brown@orthoflow.edu` / `reception123`
+- `admin@orthoflow.edu` / `Jk@xditc4`
 
 ## 10. Google Sign-In
 
@@ -259,56 +251,12 @@ Current backend behavior:
 - validates Google ID token audience against `GOOGLE_CLIENT_ID`
 - accepts comma-separated backend client IDs if needed
 
-## 11. Email and Reminder Integration
+## 11. Operational Validation
 
-Current reminder/email behavior:
+Recommended manual validation after startup:
 
-- manual reminder sending exists on visit routes
-- automatic reminder background job starts with the backend
-- `EMAIL_SIMULATION=true` keeps email flows non-destructive for local runs
-- setting `EMAIL_SIMULATION=false` requires valid `SMTP_*` settings
-
-Admin account creation and password reset flows also use email service logic.
-
-## 12. File Uploads and Dental Chart PDFs
-
-Current document handling:
-
-- uploads are served from `Backend/src/uploads`
-- file constraints are controlled by backend env
-- document delete and restore flows are implemented
-
-Dental chart PDF behavior:
-
-- visual PDF generation can use Playwright/Chromium when available
-- fallback PDF generation is used when Chromium is unavailable
-
-Optional setup for visual PDF output:
-
-```bash
-cd Backend
-npm i playwright
-npx playwright install chromium
-```
-
-## 13. Verification Checklist
-
-Minimum integration verification after startup:
-
-1. Open `http://localhost:3000/health`
-2. Open `http://localhost:5173`
-3. Sign in with a seeded account
-4. Confirm dashboard data loads
-5. Open `/patients` and a patient profile
-6. Confirm queue, materials, or reports based on role
-7. If Google Sign-In is configured, verify the Google button renders and sign-in completes
-
-## 14. Current Constraints
-
-These are important for anyone treating this as the latest deployment guide:
-
-- this repository does not currently include Docker, PM2, or reverse-proxy deployment config
-- the frontend API base is hardcoded to `http://localhost:3000`
-- `npm run seed` is destructive for seeded application tables
-- backend development startup auto-opens `/api` in development mode
-- `start-orthoflow.sh` is best suited to local development on a machine matching the repository path used in the script
+1. Open `http://localhost:3000/health` and confirm the backend responds.
+2. Open `http://localhost:5173` and confirm the frontend loads.
+3. Sign in with an account appropriate for the workflow you want to validate.
+4. Verify patients, queue, materials, and admin-only pages behave according to role.
+5. Confirm save, delete, restore, and download actions show visible feedback in the UI.

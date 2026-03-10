@@ -26,57 +26,9 @@ async function seedDatabase() {
       {
         name: 'System Administrator',
         email: 'admin@orthoflow.edu',
-        password_hash: bcrypt.hashSync('admin123', 12),
+        password_hash: bcrypt.hashSync('Jk@xditc4', 12),
         role: 'ADMIN',
         department: 'IT',
-        status: 'ACTIVE'
-      },
-      {
-        name: 'Dr. Sarah Johnson',
-        email: 'sarah.johnson@orthoflow.edu',
-        password_hash: bcrypt.hashSync('doctor123', 12),
-        role: 'ORTHODONTIST',
-        department: 'Orthodontics',
-        status: 'ACTIVE'
-      },
-      {
-        name: 'Dr. Michael Chen',
-        email: 'michael.chen@orthoflow.edu',
-        password_hash: bcrypt.hashSync('doctor123', 12),
-        role: 'DENTAL_SURGEON',
-        department: 'Oral Surgery',
-        status: 'ACTIVE'
-      },
-      {
-        name: 'Nurse Emily Wilson',
-        email: 'emily.wilson@orthoflow.edu',
-        password_hash: bcrypt.hashSync('nurse123', 12),
-        role: 'NURSE',
-        department: 'Nursing',
-        status: 'ACTIVE'
-      },
-      {
-        name: 'Alex Thompson',
-        email: 'alex.thompson@orthoflow.edu',
-        password_hash: bcrypt.hashSync('student123', 12),
-        role: 'STUDENT',
-        department: 'Orthodontics',
-        status: 'ACTIVE'
-      },
-      {
-        name: 'Maria Garcia',
-        email: 'maria.garcia@orthoflow.edu',
-        password_hash: bcrypt.hashSync('student123', 12),
-        role: 'STUDENT',
-        department: 'Orthodontics',
-        status: 'ACTIVE'
-      },
-      {
-        name: 'Receptionist Lisa Brown',
-        email: 'lisa.brown@orthoflow.edu',
-        password_hash: bcrypt.hashSync('reception123', 12),
-        role: 'RECEPTION',
-        department: 'Front Desk',
         status: 'ACTIVE'
       }
     ];
@@ -90,13 +42,7 @@ async function seedDatabase() {
     console.log('┌─────────────────────────────────────────────────┐');
     console.log('│ Email                 │ Role      │ Password │');
     console.log('├─────────────────────────────────────────┤');
-    console.log('│ admin@orthoflow.edu   │ Admin    │ admin123 │');
-    console.log('│ sarah.johnson@...   │ Ortho    │ doctor123│');
-    console.log('│ michael.chen@...    │ Surgeon  │ doctor123│');
-    console.log('│ emily.wilson@...    │ Nurse    │ nurse123 │');
-    console.log('│ alex.thompson@...   │ Student  │ student123│');
-    console.log('│ maria.garcia@...    │ Student  │ student123│');
-    console.log('│ lisa.brown@...     │ Reception│ reception123│');
+    console.log('│ admin@orthoflow.edu │ Admin    │ Jk@xditc4 │');
     console.log('└─────────────────────────────────────────────────┘');
     console.log('\n🎯 Ready to start the application!');
       
