@@ -45,6 +45,9 @@ const ensureAccessControlSchema = async () => {
   if (!userColumnSet.has('must_change_password')) {
     await query('ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT FALSE AFTER status');
   }
+  if (!userColumnSet.has('phone')) {
+    await query('ALTER TABLE users ADD COLUMN phone VARCHAR(50) NULL AFTER email');
+  }
   if (!userColumnSet.has('password_changed_at')) {
     await query('ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP NULL DEFAULT NULL AFTER must_change_password');
   }

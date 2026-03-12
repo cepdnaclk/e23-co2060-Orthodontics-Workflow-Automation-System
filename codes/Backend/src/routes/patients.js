@@ -105,6 +105,13 @@ router.get('/:id/history',
   asyncHandler(patientController.getPatientHistory)
 );
 
+// GET /api/patients/:id/record-export - Download full patient record as a single PDF
+router.get('/:id/record-export',
+  authorizeRoles('ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'),
+  requirePermission(OBJECT_TYPES.PATIENT_GENERAL, PERMISSIONS.READ, { patientIdParam: 'id' }),
+  asyncHandler(patientController.exportPatientRecordPdf)
+);
+
 // PUT /api/patients/:id/history - Upsert patient history form data
 router.put('/:id/history',
   requirePermission(OBJECT_TYPES.PATIENT_MEDICAL, PERMISSIONS.UPDATE, { patientIdParam: 'id' }),

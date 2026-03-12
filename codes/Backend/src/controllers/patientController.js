@@ -407,6 +407,325 @@ const buildDentalChartVersionVisualPdf = async ({ patient, version }) => {
   }
 };
 
+const formatDateTime = (value) => {
+  if (!value) return 'N/A';
+  const raw = String(value).trim();
+  const direct = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::\d{2})?/);
+  if (direct) {
+    return `${direct[1]} ${direct[2]}`;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const hour = String(parsed.getHours()).padStart(2, '0');
+  const minute = String(parsed.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hour}:${minute}`;
+};
+
+const formatDateOnly = (value) => {
+  if (!value) return 'N/A';
+  const raw = String(value).trim();
+  const direct = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (direct) return direct[1];
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  return parsed.toISOString().slice(0, 10);
+};
+
+const humanizeKey = (value) =>
+  String(value || '')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const stringifyRecordValue = (value) => {
+  if (value === null || value === undefined) return 'N/A';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((entry) => stringifyRecordValue(entry))
+      .filter((entry) => entry && entry !== 'N/A');
+    return normalized.length ? normalized.join(', ') : 'N/A';
+  }
+  if (typeof value === 'object') {
+    const entries = Object.entries(value)
+      .map(([key, entryValue]) => `${humanizeKey(key)}: ${stringifyRecordValue(entryValue)}`)
+      .filter((entry) => !entry.endsWith(': N/A'));
+    return entries.length ? entries.join(' | ') : 'N/A';
+  }
+  const normalized = String(value).trim();
+  return normalized || 'N/A';
+};
+
+const buildPatientRecordExportPdf = ({ patient, history, dentalVersions, diagnosisNotes, treatmentNotes }) => {
+  const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Unknown';
+  const lines = [];
+  lines.push('Orthodontics Workflow System - Patient Record Export');
+  lines.push('');
+  lines.push(`Patient ID: ${patient.id}`);
+  lines.push(`Patient Code: ${patient.patient_code || 'N/A'}`);
+  lines.push(`Patient Name: ${patientName}`);
+  lines.push(`Exported At: ${formatDateTime(new Date().toISOString())}`);
+  lines.push('');
+  lines.push('1. Latest Patient History');
+  lines.push('----------------------------------------------------------------------------------------------------');
+  lines.push(`Last Updated: ${formatDateTime(history.metadata?.updated_at || history.metadata?.created_at)}`);
+  lines.push(`Updated By: ${history.metadata?.updated_by_name || 'N/A'}`);
+  Object.entries({ ...(history.auto || {}), ...(history.history || {}) }).forEach(([key, value]) => {
+    lines.push(`${humanizeKey(key)}: ${stringifyRecordValue(value)}`);
+  });
+  lines.push('');
+  lines.push('2. All Dental Chart Versions');
+  lines.push('----------------------------------------------------------------------------------------------------');
+  if (!dentalVersions.length) {
+    lines.push('No dental chart versions available.');
+  } else {
+    dentalVersions.forEach((version, versionIndex) => {
+      lines.push(`${versionIndex + 1}. ${version.version_label || `Version ${version.id}`}`);
+      lines.push(`   Saved At: ${formatDateTime(version.created_at)} | Annotated By: ${version.annotated_by_name || 'Unknown'}`);
+      const entries = Array.isArray(version.snapshot_data)
+        ? [...version.snapshot_data].sort(compareDentalChartVersionRows)
+        : [];
+      if (!entries.length) {
+        lines.push('   No annotated teeth in this version.');
+      } else {
+        entries.forEach((entry, entryIndex) => {
+          const flags = [
+            entry.is_pathology ? 'Pathology' : null,
+            entry.is_planned ? 'Planned' : null,
+            entry.is_treated ? 'Treated' : null,
+            entry.is_missing ? 'Missing' : null
+          ].filter(Boolean).join(', ') || 'Healthy';
+          lines.push(`   ${entryIndex + 1}. Tooth ${getDentalChartVersionToothLabel(entry)} | Status: ${entry.status || 'HEALTHY'} | Flags: ${flags}`);
+          lines.push(`      Pathology: ${stringifyRecordValue(entry.pathology)}`);
+          lines.push(`      Treatment: ${stringifyRecordValue(entry.treatment)}`);
+          lines.push(`      Annotated Date: ${formatDateTime(entry.event_date)}`);
+        });
+      }
+      lines.push('');
+    });
+  }
+  lines.push('3. Diagnosis Details');
+  lines.push('----------------------------------------------------------------------------------------------------');
+  if (!diagnosisNotes.length) {
+    lines.push('No diagnosis details recorded.');
+  } else {
+    diagnosisNotes.forEach((note, index) => {
+      lines.push(`${index + 1}. ${note.title || 'Diagnosis Entry'}`);
+      lines.push(`   Authored By: ${note.author_name || 'Unknown'} (${note.author_role || 'N/A'}) | Created: ${formatDateTime(note.created_at)}`);
+      lines.push(`   Verified: ${note.is_verified ? `Yes${note.verifier_name ? ` by ${note.verifier_name}` : ''}` : 'No'}`);
+      lines.push(`   Content: ${stringifyRecordValue(note.content)}`);
+      lines.push('');
+    });
+  }
+  lines.push('4. Treatment Plans and Notes');
+  lines.push('----------------------------------------------------------------------------------------------------');
+  if (!treatmentNotes.length) {
+    lines.push('No treatment plans or notes recorded.');
+  } else {
+    treatmentNotes.forEach((note, index) => {
+      lines.push(`${index + 1}. ${note.note_type || 'NOTE'}${note.title ? ` - ${note.title}` : ''}`);
+      lines.push(`   Authored By: ${note.author_name || 'Unknown'} (${note.author_role || 'N/A'}) | Created: ${formatDateTime(note.created_at)}`);
+      lines.push(`   Plan / Procedure: ${stringifyRecordValue(note.plan_procedure)}`);
+      lines.push(`   Planned For: ${formatDateTime(note.planned_for)}`);
+      lines.push(`   Executed At: ${formatDateTime(note.executed_at)}`);
+      lines.push(`   Execution Status: ${stringifyRecordValue(note.execution_status)}`);
+      lines.push(`   Outcome Notes: ${stringifyRecordValue(note.outcome_notes)}`);
+      lines.push(`   Verified: ${note.is_verified ? `Yes${note.verifier_name ? ` by ${note.verifier_name}` : ''}` : 'No'}`);
+      lines.push(`   Content: ${stringifyRecordValue(note.content)}`);
+      lines.push('');
+    });
+  }
+
+  const wrapped = lines.flatMap((line) => wrapLine(line));
+  return buildPdfFromLines(wrapped);
+};
+
+const buildPatientRecordExportHtml = ({ patient, history, dentalVersions, diagnosisNotes, treatmentNotes }) => {
+  const patientName = `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Unknown';
+  const historyEntries = Object.entries({ ...(history.auto || {}), ...(history.history || {}) });
+
+  const historyCards = historyEntries.length
+    ? historyEntries.map(([key, value]) => `
+        <div class="history-card">
+          <div class="history-label">${escapeHtml(humanizeKey(key))}</div>
+          <div class="history-value">${escapeHtml(stringifyRecordValue(value))}</div>
+        </div>
+      `).join('')
+    : '<p class="empty">No patient history recorded.</p>';
+
+  const dentalSections = dentalVersions.length
+    ? dentalVersions.map((version, versionIndex) => {
+      const entries = Array.isArray(version.snapshot_data)
+        ? [...version.snapshot_data].sort(compareDentalChartVersionRows)
+        : [];
+      const cards = entries.length
+        ? entries.map((row) => {
+          const flags = [
+            row.is_pathology ? 'Pathology' : null,
+            row.is_planned ? 'Planned' : null,
+            row.is_treated ? 'Treated' : null,
+            row.is_missing ? 'Missing' : null
+          ].filter(Boolean).join(' • ') || 'Healthy';
+          return `
+            <div class="tooth" style="${getToothVisualStyle(row)}">
+              <div class="tooth-content">
+                <div class="notation"><span class="x">${escapeHtml(row.notation_x || '-')}</span><span class="slash">/</span><span class="y">${escapeHtml(row.notation_y || '-')}</span></div>
+                <div class="tooth-icon">🦷</div>
+                <div class="meta">Tooth: ${escapeHtml(getDentalChartVersionToothLabel(row))}</div>
+                <div class="meta">Status: ${escapeHtml(row.status || 'HEALTHY')}</div>
+                <div class="flags">${escapeHtml(flags)}</div>
+                <div class="text">Pathology: ${escapeHtml(stringifyRecordValue(row.pathology))}</div>
+                <div class="text">Treatment: ${escapeHtml(stringifyRecordValue(row.treatment))}</div>
+                <div class="text">Annotated Date: ${escapeHtml(formatDateTime(row.event_date))}</div>
+              </div>
+            </div>`;
+        }).join('')
+        : '<p class="empty">No annotated teeth in this version.</p>';
+
+      return `
+        <section class="version-block">
+          <div class="version-header">
+            <h3>${versionIndex + 1}. ${escapeHtml(version.version_label || `Version ${version.id}`)}</h3>
+            <p>Saved ${escapeHtml(formatDateTime(version.created_at))} by ${escapeHtml(version.annotated_by_name || 'Unknown')}</p>
+          </div>
+          <div class="grid">
+            ${cards}
+          </div>
+        </section>
+      `;
+    }).join('')
+    : '<p class="empty">No dental chart versions available.</p>';
+
+  const renderNoteCards = (notes, emptyText) => {
+    if (!notes.length) return `<p class="empty">${escapeHtml(emptyText)}</p>`;
+    return notes.map((note, index) => `
+      <div class="note-card">
+        <div class="note-title">${index + 1}. ${escapeHtml(note.title || note.note_type || 'Record')}</div>
+        <div class="note-meta">Author: ${escapeHtml(note.author_name || 'Unknown')} (${escapeHtml(note.author_role || 'N/A')})</div>
+        <div class="note-meta">Created: ${escapeHtml(formatDateTime(note.created_at))}</div>
+        <div class="note-meta">Verified: ${escapeHtml(note.is_verified ? `Yes${note.verifier_name ? ` by ${note.verifier_name}` : ''}` : 'No')}</div>
+        ${note.plan_procedure || note.planned_for || note.executed_at || note.execution_status || note.outcome_notes ? `
+          <div class="note-grid">
+            <div><strong>Plan / Procedure:</strong> ${escapeHtml(stringifyRecordValue(note.plan_procedure))}</div>
+            <div><strong>Planned For:</strong> ${escapeHtml(formatDateTime(note.planned_for))}</div>
+            <div><strong>Executed At:</strong> ${escapeHtml(formatDateTime(note.executed_at))}</div>
+            <div><strong>Execution Status:</strong> ${escapeHtml(stringifyRecordValue(note.execution_status))}</div>
+            <div><strong>Outcome Notes:</strong> ${escapeHtml(stringifyRecordValue(note.outcome_notes))}</div>
+          </div>
+        ` : ''}
+        <div class="note-content">${escapeHtml(stringifyRecordValue(note.content)).replace(/\n/g, '<br/>')}</div>
+      </div>
+    `).join('');
+  };
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Patient Record Export</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+    .page { padding: 18px; }
+    .hero { background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border: 1px solid #bfdbfe; border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+    .hero h1 { margin: 0 0 6px; font-size: 24px; }
+    .hero p { margin: 2px 0; font-size: 12px; color: #334155; }
+    .section { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+    .section-header { margin-bottom: 8px; }
+    .section-header h2 { margin: 0 0 4px; font-size: 18px; }
+    .section-header p { margin: 0; color: #475569; font-size: 12px; }
+    .version-block { border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 10px; break-inside: avoid; page-break-inside: avoid; }
+    .version-block:first-of-type { border-top: 0; padding-top: 2px; margin-top: 2px; }
+    .version-header { margin-bottom: 8px; }
+    .version-header h3 { margin: 0 0 3px; font-size: 15px; }
+    .version-header p { margin: 0; color: #475569; font-size: 11px; }
+    .history-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .history-card, .note-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; background: #fff; }
+    .history-label { font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .history-value { font-size: 13px; color: #0f172a; line-height: 1.45; white-space: pre-wrap; }
+    .grid { display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; }
+    .tooth { width: calc((100% - 28px) / 3); border: 1px solid #0f172a; border-radius: 14px; overflow: hidden; min-height: 138px; break-inside: avoid; page-break-inside: avoid; }
+    .tooth-content { padding: 9px; min-height: 138px; }
+    .notation { font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+    .notation .x { color: #2563eb; }
+    .notation .slash { color: #94a3b8; margin: 0 2px; }
+    .notation .y { color: #047857; }
+    .tooth-icon { font-size: 30px; line-height: 1; margin-bottom: 4px; }
+    .meta { font-size: 11px; color: #0f172a; margin-bottom: 2px; }
+    .flags { font-size: 11px; color: #1d4ed8; margin-bottom: 4px; font-weight: 700; }
+    .text { font-size: 10px; color: #334155; line-height: 1.3; }
+    .note-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .note-meta { font-size: 11px; color: #475569; margin-bottom: 2px; }
+    .note-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; font-size: 12px; color: #1e293b; margin: 10px 0; }
+    .note-content { font-size: 13px; line-height: 1.55; color: #0f172a; white-space: pre-wrap; margin-top: 10px; }
+    .empty { margin: 0; color: #64748b; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Patient Record Export</h1>
+      <p>Patient: ${escapeHtml(patientName)} (${escapeHtml(patient.patient_code || 'N/A')})</p>
+      <p>Exported At: ${escapeHtml(formatDateTime(new Date().toISOString()))}</p>
+      <p>Includes latest patient history, all dental chart versions, diagnosis details, and treatment plans and notes.</p>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>1. Latest Patient History</h2>
+        <p>Last updated ${escapeHtml(formatDateTime(history.metadata?.updated_at || history.metadata?.created_at))} by ${escapeHtml(history.metadata?.updated_by_name || 'N/A')}</p>
+      </div>
+      <div class="history-grid">${historyCards}</div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>2. All Dental Chart Versions</h2>
+        <p>Annotated chart versions saved for this patient.</p>
+      </div>
+      ${dentalSections}
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>3. Diagnosis Details</h2>
+        <p>Diagnosis entries recorded against the patient.</p>
+      </div>
+      ${renderNoteCards(diagnosisNotes, 'No diagnosis details recorded.')}
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>4. Treatment Plans and Notes</h2>
+        <p>Treatment-plan entries and clinical notes recorded against the patient.</p>
+      </div>
+      ${renderNoteCards(treatmentNotes, 'No treatment plans or notes recorded.')}
+    </section>
+  </div>
+</body>
+</html>`;
+};
+
+const buildPatientRecordExportVisualPdf = async (payload) => {
+  const { chromium } = require('playwright');
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(buildPatientRecordExportHtml(payload), { waitUntil: 'networkidle' });
+    return await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '10mm', right: '8mm', bottom: '10mm', left: '8mm' }
+    });
+  } finally {
+    await browser.close();
+  }
+};
+
 // Get all patients with pagination and filtering
 const getPatients = async (req, res) => {
   try {
@@ -2313,6 +2632,127 @@ const downloadDentalChartVersion = async (req, res) => {
   }
 };
 
+const exportPatientRecordPdf = async (req, res) => {
+  try {
+    const { id: patientId } = req.params;
+    const patient = await findOne('patients', { id: patientId, deleted_at: null });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Patient not found'
+      });
+    }
+
+    const [historyRows, dentalVersionRows, noteRows] = await Promise.all([
+      query(
+        `SELECT ph.id, ph.patient_id, ph.form_data, ph.updated_by, ph.created_at, ph.updated_at, u.name AS updated_by_name
+         FROM patient_histories ph
+         LEFT JOIN users u ON u.id = ph.updated_by
+         WHERE ph.patient_id = ?
+         LIMIT 1`,
+        [patientId]
+      ),
+      query(
+        `SELECT v.*, u.name AS annotated_by_name
+         FROM dental_chart_versions v
+         LEFT JOIN users u ON u.id = v.annotated_by
+         WHERE v.patient_id = ?
+           AND v.deleted_at IS NULL
+         ORDER BY v.created_at DESC, v.id DESC`,
+        [patientId]
+      ),
+      query(
+        `SELECT 
+           cn.*,
+           author.name as author_name,
+           author.role as author_role,
+           verifier.name as verifier_name
+         FROM clinical_notes cn
+         LEFT JOIN users author ON cn.author_id = author.id
+         LEFT JOIN users verifier ON cn.verified_by = verifier.id
+         WHERE cn.patient_id = ?
+           AND cn.deleted_at IS NULL
+         ORDER BY cn.created_at DESC, cn.id DESC`,
+        [patientId]
+      )
+    ]);
+
+    const historyRow = historyRows[0] || null;
+    let historyData = {};
+    if (historyRow?.form_data && typeof historyRow.form_data === 'object') {
+      historyData = historyRow.form_data;
+    } else if (typeof historyRow?.form_data === 'string') {
+      try {
+        historyData = JSON.parse(historyRow.form_data);
+      } catch (_) {
+        historyData = {};
+      }
+    }
+
+    const history = {
+      auto: {
+        name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim(),
+        address: patient.address || '',
+        age: patient.date_of_birth
+          ? Math.floor((new Date() - new Date(patient.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000))
+          : '',
+        birthday: patient.date_of_birth ? String(patient.date_of_birth).slice(0, 10) : '',
+        telephone: patient.phone || '',
+        sex: patient.gender === 'MALE' ? 'M' : patient.gender === 'FEMALE' ? 'F' : 'O',
+        province: patient.province || '',
+        date_of_examination: patient.created_at ? String(patient.created_at).slice(0, 10) : ''
+      },
+      history: historyData,
+      metadata: historyRow
+        ? {
+            id: historyRow.id,
+            updated_by: historyRow.updated_by,
+            updated_by_name: historyRow.updated_by_name,
+            created_at: historyRow.created_at,
+            updated_at: historyRow.updated_at
+          }
+        : null
+    };
+
+    const dentalVersions = dentalVersionRows.map((row) => normalizeDentalChartVersionRow(row));
+    const diagnosisNotes = noteRows.filter((note) => String(note.note_type || '').toUpperCase() === 'DIAGNOSIS');
+    const treatmentNotes = noteRows.filter((note) => String(note.note_type || '').toUpperCase() !== 'DIAGNOSIS');
+
+    const safePatientCode = String(patient.patient_code || `patient_${patient.id}`)
+      .replace(/[^a-zA-Z0-9-_]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 80);
+
+    const payload = {
+      patient,
+      history,
+      dentalVersions,
+      diagnosisNotes,
+      treatmentNotes
+    };
+
+    let pdfBuffer;
+    try {
+      pdfBuffer = await buildPatientRecordExportVisualPdf(payload);
+    } catch (visualPdfError) {
+      console.warn('Patient record visual PDF generation unavailable, using fallback PDF:', visualPdfError?.message || visualPdfError);
+      pdfBuffer = buildPatientRecordExportPdf(payload);
+    }
+
+    const filename = `${safePatientCode || `patient_record_${patient.id}`}_record_export.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', String(pdfBuffer.length));
+    return res.status(200).send(pdfBuffer);
+  } catch (error) {
+    console.error('Export patient record PDF error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
 const deleteDentalChartVersion = async (req, res) => {
   try {
     const { id: patientId, versionId } = req.params;
@@ -2650,6 +3090,7 @@ module.exports = {
   listDentalChartVersions,
   createDentalChartVersion,
   downloadDentalChartVersion,
+  exportPatientRecordPdf,
   deleteDentalChartVersion,
   restoreDentalChartVersion,
   getPatientHistory,

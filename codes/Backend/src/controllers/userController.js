@@ -11,6 +11,49 @@ const { logAuditEvent } = require('../middleware/errorHandler');
 const { sendInitialPasswordEmail } = require('../services/emailService');
 const { generateTemporaryPassword } = require('../utils/password');
 
+let userColumnSetPromise = null;
+
+const getUserColumnSet = async () => {
+  if (!userColumnSetPromise) {
+    userColumnSetPromise = query(`
+      SELECT COLUMN_NAME
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'users'
+    `)
+      .then((columns) => new Set(columns.map((column) => column.COLUMN_NAME)))
+      .catch((error) => {
+        userColumnSetPromise = null;
+        throw error;
+      });
+  }
+
+  return userColumnSetPromise;
+};
+
+const getUserPhoneSelectFragment = async () => {
+  const userColumns = await getUserColumnSet();
+  return userColumns.has('phone') ? 'phone' : 'NULL AS phone';
+};
+
+const attachUserPhoneFieldIfSupported = async (userData = {}) => {
+  const normalizedData = { ...userData };
+  const userColumns = await getUserColumnSet();
+
+  if (!userColumns.has('phone')) {
+    delete normalizedData.phone;
+    return normalizedData;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalizedData, 'phone')) {
+    normalizedData.phone = typeof normalizedData.phone === 'string' && normalizedData.phone.trim()
+      ? normalizedData.phone.trim()
+      : null;
+  }
+
+  return normalizedData;
+};
+
 const deactivateUserAssignmentsSafely = async (userId) => {
   // Remove active rows that would collide with already-existing inactive rows
   // under the unique assignment constraint when deactivating.
@@ -83,9 +126,10 @@ const getUsers = async (req, res) => {
     const total = totalResult[0].total;
 
     // Get users without password hashes
+    const phoneSelect = await getUserPhoneSelectFragment();
     const usersQuery = `
       SELECT 
-        id, name, email, role, department, status, created_at, updated_at
+        id, name, email, ${phoneSelect}, role, department, status, created_at, updated_at
       FROM users 
       ${whereClause}
       ORDER BY created_at DESC
@@ -121,9 +165,10 @@ const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const phoneSelect = await getUserPhoneSelectFragment();
     const userQuery = `
       SELECT 
-        id, name, email, role, department, status, created_at, updated_at
+        id, name, email, ${phoneSelect}, role, department, status, created_at, updated_at
       FROM users 
       WHERE id = ?
     `;
@@ -189,7 +234,7 @@ const createUser = async (req, res) => {
     const passwordHash = await bcrypt.hash(temporaryPassword, saltRounds);
 
     // Prepare user data
-    const newUserData = {
+    const newUserData = await attachUserPhoneFieldIfSupported({
       name: userData.name,
       email: userData.email,
       password_hash: passwordHash,
@@ -198,7 +243,7 @@ const createUser = async (req, res) => {
       status: userData.status || 'ACTIVE',
       must_change_password: !providedPassword,
       password_changed_at: providedPassword ? new Date() : null
-    };
+    });
 
     // Create user
     const userId = await insert('users', newUserData);
@@ -282,12 +327,14 @@ const updateUser = async (req, res) => {
       delete updateData.password;
     }
 
-    const roleChanged = Boolean(updateData.role) && updateData.role !== existingUser.role;
-    const statusChangedToInactive = String(updateData.status || '').toUpperCase() === 'INACTIVE'
+    const normalizedUpdateData = await attachUserPhoneFieldIfSupported(updateData);
+
+    const roleChanged = Boolean(normalizedUpdateData.role) && normalizedUpdateData.role !== existingUser.role;
+    const statusChangedToInactive = String(normalizedUpdateData.status || '').toUpperCase() === 'INACTIVE'
       && String(existingUser.status || '').toUpperCase() !== 'INACTIVE';
 
     // Update user
-    await update('users', updateData, { id });
+    await update('users', normalizedUpdateData, { id });
 
     if (roleChanged) {
       await deactivateUserAssignmentsSafely(id);
@@ -311,7 +358,7 @@ const updateUser = async (req, res) => {
       );
     }
 
-    await logAuditEvent(req.user.id, 'UPDATE', 'USER', id, existingUser, updateData);
+    await logAuditEvent(req.user.id, 'UPDATE', 'USER', id, existingUser, normalizedUpdateData);
 
     // Return updated user without password hash
     const updatedUser = await findOne('users', { id });

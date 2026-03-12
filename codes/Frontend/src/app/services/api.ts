@@ -464,6 +464,18 @@ export const apiService = {
     updateHistory: (id: string, history: Record<string, any>) =>
       apiClient.put<any>(API_ENDPOINTS.PATIENTS.HISTORY(id), { history }),
 
+    downloadPatientRecordExport: async (id: string) => {
+      const { blob, filename } = await apiClient.downloadFile(API_ENDPOINTS.PATIENTS.RECORD_EXPORT(id));
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || `patient-record-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    },
+
     getDentalChart: (id: string) =>
       apiClient.get<any[]>(API_ENDPOINTS.PATIENTS.DENTAL_CHART(id)),
 

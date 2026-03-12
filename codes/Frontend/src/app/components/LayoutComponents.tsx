@@ -23,12 +23,13 @@ const formatUnderscoreLabel = (value?: string | null) => String(value || '').rep
 export function Sidebar() {
   const { user } = useAuth();
   const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
+  const mustChangePassword = Boolean(user?.must_change_password);
 
   const canSeeQueue = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'NURSE', 'RECEPTION'].includes(user?.role || '');
   const canSeeCases = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(user?.role || '');
   const canSeeReports = user?.role === 'ADMIN';
   const canSeeMaterials = ['ADMIN', 'NURSE'].includes(user?.role || '');
-  const canSeeRequestApprovals = ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user?.role || '');
+  const canSeeRequestApprovals = !mustChangePassword && ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user?.role || '');
 
   useEffect(() => {
     if (!canSeeRequestApprovals) {
@@ -71,18 +72,22 @@ export function Sidebar() {
     };
   }, [canSeeRequestApprovals]);
 
-  const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/', visible: true },
-    { name: 'Patients', icon: Users, path: '/patients', visible: true },
-    { name: 'Clinic Queue', icon: Clock, path: '/queue', visible: canSeeQueue },
-    { name: 'Student Cases', icon: GraduationCap, path: '/cases', visible: canSeeCases },
-    { name: 'Reports', icon: BarChart3, path: '/reports', visible: canSeeReports },
-    { name: 'Materials', icon: Package, path: '/materials', visible: canSeeMaterials },
-    { name: 'Request Approvals', icon: ClipboardCheck, path: '/requests/approvals', visible: canSeeRequestApprovals },
-    { name: 'User Management', icon: UserCog, path: '/admin/users', visible: user?.role === 'ADMIN' },
-    { name: 'Audit Log', icon: ListChecks, path: '/admin/audit-logs', visible: user?.role === 'ADMIN' },
-    { name: 'Settings', icon: Settings, path: '/settings', visible: true },
-  ].filter((item) => item.visible);
+  const navItems = mustChangePassword
+    ? [
+        { name: 'Settings', icon: Settings, path: '/settings', visible: true }
+      ]
+    : [
+        { name: 'Dashboard', icon: LayoutDashboard, path: '/', visible: true },
+        { name: 'Patients', icon: Users, path: '/patients', visible: true },
+        { name: 'Clinic Queue', icon: Clock, path: '/queue', visible: canSeeQueue },
+        { name: 'Student Cases', icon: GraduationCap, path: '/cases', visible: canSeeCases },
+        { name: 'Reports', icon: BarChart3, path: '/reports', visible: canSeeReports },
+        { name: 'Materials', icon: Package, path: '/materials', visible: canSeeMaterials },
+        { name: 'Request Approvals', icon: ClipboardCheck, path: '/requests/approvals', visible: canSeeRequestApprovals },
+        { name: 'User Management', icon: UserCog, path: '/admin/users', visible: user?.role === 'ADMIN' },
+        { name: 'Audit Log', icon: ListChecks, path: '/admin/audit-logs', visible: user?.role === 'ADMIN' },
+        { name: 'Settings', icon: Settings, path: '/settings', visible: true },
+      ].filter((item) => item.visible);
 
   return (
     <aside className="w-64 border-r border-gray-100 bg-white h-screen flex flex-col sticky top-0">
@@ -96,6 +101,11 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-1">
+        {mustChangePassword && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+            Change your temporary password to unlock the rest of the system.
+          </div>
+        )}
         {navItems.map((item) => (
           <NavLink
             key={item.path}

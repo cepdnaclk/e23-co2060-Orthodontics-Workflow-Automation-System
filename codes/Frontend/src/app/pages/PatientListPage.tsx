@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Table, Button, Input, Badge, RefreshButton } from '../components/UI';
-import { Search, Filter, UserPlus, Pencil, Trash2, ChevronDown, RefreshCcw, Calendar, X } from 'lucide-react';
+import { Search, Filter, UserPlus, Pencil, Trash2, ChevronDown, RefreshCcw, Calendar, X, FileDown } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -57,6 +57,8 @@ const initialForm = {
   address: '',
   province: ''
 };
+
+const PHONE_REGEX = /^\d{10}$/;
 
 const calculateAgeFromDob = (dobValue: string) => {
   if (!dobValue) return '';
@@ -216,6 +218,7 @@ export function PatientListPage() {
   const [assignableStaff, setAssignableStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportingPatientId, setExportingPatientId] = useState<number | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -287,6 +290,8 @@ export function PatientListPage() {
   const canOrthoAssignCareTeam = user?.role === 'ORTHODONTIST';
   const canAssignCareTeam = ['RECEPTION', 'ORTHODONTIST'].includes(user?.role || '');
   const canFilterByAssignedOrthodontist = ['ADMIN', 'RECEPTION', 'DENTAL_SURGEON', 'STUDENT', 'NURSE'].includes(user?.role || '');
+  const canExportAssignedPatientRecord = ['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(user?.role || '');
+  const canShowAssignAction = canManagePatientDirectory ? canAssignCareTeam : canOrthoAssignCareTeam;
 
   const loadPatients = async (
     search = '',
@@ -418,6 +423,18 @@ export function PatientListPage() {
     setShowFilters(false);
   };
 
+  const handleExportPatientRecord = async (patient: PatientRecord) => {
+    setExportingPatientId(patient.id);
+    setError(null);
+    try {
+      await apiService.patients.downloadPatientRecordExport(String(patient.id));
+    } catch (err: any) {
+      setError(err?.message || `Failed to export patient record for ${patient.first_name} ${patient.last_name}`);
+    } finally {
+      setExportingPatientId(null);
+    }
+  };
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (canFilterByAssignedOrthodontist && activeFilters.assignedOrthodontist) count += 1;
@@ -426,6 +443,12 @@ export function PatientListPage() {
   }, [activeFilters, canFilterByAssignedOrthodontist]);
 
   const filteredPatients = patients;
+  const createPhone = String(createForm.phone || '');
+  const editPhone = String(editForm.phone || '');
+  const isCreatePhoneValid = createPhone === '' || PHONE_REGEX.test(createPhone);
+  const isEditPhoneValid = editPhone === '' || PHONE_REGEX.test(editPhone);
+
+  const normalizePhoneInput = (value: string) => value.replace(/\D/g, '').slice(0, 10);
 
   useEffect(() => {
     if (createOpen || editOpen || assignOpen) return;
@@ -437,6 +460,10 @@ export function PatientListPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isCreatePhoneValid) {
+      setError('Phone number must be exactly 10 digits');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -447,7 +474,7 @@ export function PatientListPage() {
         date_of_birth: createForm.date_of_birth || undefined,
         age: createForm.age ? Number(createForm.age) : undefined,
         gender: createForm.gender,
-        phone: createForm.phone || undefined,
+        phone: createPhone || undefined,
         email: createForm.email || undefined,
         address: createForm.address || undefined,
         province: createForm.province || undefined
@@ -506,6 +533,10 @@ export function PatientListPage() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPatientId) return;
+    if (!isEditPhoneValid) {
+      setError('Phone number must be exactly 10 digits');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -516,7 +547,7 @@ export function PatientListPage() {
         date_of_birth: editForm.date_of_birth || undefined,
         age: editForm.age ? Number(editForm.age) : undefined,
         gender: editForm.gender,
-        phone: editForm.phone || undefined,
+        phone: editPhone || undefined,
         email: editForm.email || undefined,
         address: editForm.address || undefined,
         province: editForm.province || undefined
@@ -921,45 +952,55 @@ export function PatientListPage() {
                   </td>
                 )}
                 <td className="px-8 py-4 align-middle text-center whitespace-nowrap">
-                  {canManagePatientDirectory && (
-                    <div className="flex justify-center items-center gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openEditModal(p.id);
-                        }}
-                      >
-                        <Pencil className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                      {canAssignCareTeam && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openAssignModal(p.id);
-                          }}
-                        >
-                          Assign Team
-                        </Button>
-                      )}
+                  {((canExportAssignedPatientRecord || canShowAssignAction) && !p.is_inactive) || canManagePatientDirectory ? (
+                    <div className="flex justify-center">
+                      <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-blue-50 px-3 py-3 shadow-sm">
+                        {canShowAssignAction && !p.is_inactive && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-10 min-w-[136px] rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-500 to-teal-500 px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:from-emerald-600 hover:to-teal-600 hover:shadow-[0_14px_30px_rgba(16,185,129,0.28)] active:translate-y-0 focus:ring-emerald-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openAssignModal(p.id);
+                            }}
+                          >
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Assign Team
+                          </Button>
+                        )}
+                        {canExportAssignedPatientRecord && !p.is_inactive && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-10 min-w-[148px] rounded-xl border border-blue-200 bg-gradient-to-r from-blue-600 to-cyan-500 px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(37,99,235,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:from-blue-700 hover:to-cyan-600 hover:shadow-[0_14px_32px_rgba(37,99,235,0.32)] active:translate-y-0 focus:ring-cyan-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportPatientRecord(p);
+                            }}
+                            disabled={exportingPatientId === p.id}
+                          >
+                            <FileDown className="mr-2 h-4 w-4" />
+                            {exportingPatientId === p.id ? 'Exporting...' : 'Export Record'}
+                          </Button>
+                        )}
+                        {canManagePatientDirectory && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-10 min-w-[136px] rounded-xl border border-amber-200 bg-gradient-to-r from-amber-400 to-orange-400 px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(245,158,11,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:from-amber-500 hover:to-orange-500 hover:shadow-[0_14px_30px_rgba(245,158,11,0.3)] active:translate-y-0 focus:ring-amber-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(p.id);
+                            }}
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  {canOrthoAssignCareTeam && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openAssignModal(p.id);
-                      }}
-                    >
-                      Assign Team
-                    </Button>
-                  )}
+                  ) : null}
                   {canDeletePatients && (
                     <div className="flex justify-end gap-2">
                       {adminDeletedFilter === 'inactive' && (
@@ -1133,8 +1174,13 @@ export function PatientListPage() {
                   <label className="text-xs font-semibold text-gray-600">Phone</label>
                   <Input
                     value={createForm.phone}
-                    onChange={(e) => setCreateForm((s) => ({ ...s, phone: e.target.value }))}
+                    onChange={(e) => setCreateForm((s) => ({ ...s, phone: normalizePhoneInput(e.target.value) }))}
+                    inputMode="numeric"
+                    maxLength={10}
                   />
+                  {createForm.phone && !isCreatePhoneValid && (
+                    <p className="text-xs font-semibold text-red-600">Phone number must be exactly 10 digits</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">Email</label>
@@ -1165,7 +1211,7 @@ export function PatientListPage() {
                 <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)} disabled={saving}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || !isCreatePhoneValid}>
                   {saving ? 'Saving...' : 'Create Patient'}
                 </Button>
               </div>
@@ -1294,8 +1340,13 @@ export function PatientListPage() {
                   <label className="text-xs font-semibold text-gray-600">Phone</label>
                   <Input
                     value={editForm.phone}
-                    onChange={(e) => setEditForm((s) => ({ ...s, phone: e.target.value }))}
+                    onChange={(e) => setEditForm((s) => ({ ...s, phone: normalizePhoneInput(e.target.value) }))}
+                    inputMode="numeric"
+                    maxLength={10}
                   />
+                  {editForm.phone && !isEditPhoneValid && (
+                    <p className="text-xs font-semibold text-red-600">Phone number must be exactly 10 digits</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">Email</label>
@@ -1326,7 +1377,7 @@ export function PatientListPage() {
                 <Button type="button" variant="secondary" onClick={() => setEditOpen(false)} disabled={saving}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || !isEditPhoneValid}>
                   {saving ? 'Saving...' : 'Update Patient'}
                 </Button>
               </div>

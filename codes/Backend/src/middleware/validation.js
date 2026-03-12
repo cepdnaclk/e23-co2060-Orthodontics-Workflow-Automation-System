@@ -1,4 +1,7 @@
 const Joi = require('joi');
+const tenDigitPhone = Joi.string().pattern(/^\d{10}$/).messages({
+  'string.pattern.base': 'Phone number must be exactly 10 digits'
+});
 
 // Validation middleware factory
 const validate = (schema, property = 'body') => {
@@ -120,10 +123,10 @@ const schemas = {
     address: Joi.string().max(1000).optional(),
     province: Joi.string().max(100).optional(),
     registration_date: Joi.date().max('now').optional(),
-    phone: Joi.string().max(50).optional(),
+    phone: tenDigitPhone.optional(),
     email: Joi.string().email().optional(),
     emergency_contact_name: Joi.string().max(255).optional(),
-    emergency_contact_phone: Joi.string().max(50).optional(),
+    emergency_contact_phone: tenDigitPhone.optional(),
     nhi_verified: Joi.boolean().optional(),
     status: Joi.string().valid('ACTIVE', 'COMPLETED', 'CONSULTATION', 'MAINTENANCE').optional()
   }).or('date_of_birth', 'age'),
@@ -137,10 +140,10 @@ const schemas = {
     gender: Joi.string().valid('MALE', 'FEMALE', 'OTHER').optional(),
     address: Joi.string().max(1000).optional(),
     province: Joi.string().max(100).optional(),
-    phone: Joi.string().max(50).optional(),
+    phone: tenDigitPhone.optional(),
     email: Joi.string().email().optional(),
     emergency_contact_name: Joi.string().max(255).optional(),
-    emergency_contact_phone: Joi.string().max(50).optional(),
+    emergency_contact_phone: tenDigitPhone.optional(),
     nhi_verified: Joi.boolean().optional(),
     status: Joi.string().valid('ACTIVE', 'COMPLETED', 'CONSULTATION', 'MAINTENANCE').optional()
   }).min(1),

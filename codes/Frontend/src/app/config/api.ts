@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
     PAYMENT_RECORDS: (id: string) => `/api/payment-records/patients/${id}`,
     MATERIAL_USAGES: (id: string) => `/api/patient-materials/patients/${id}`,
     HISTORY: (id: string) => `/api/patients/${id}/history`,
+    RECORD_EXPORT: (id: string) => `/api/patients/${id}/record-export`,
     DENTAL_CHART: (id: string) => `/api/patients/${id}/dental-chart`,
     DENTAL_CHART_TOOTH: (id: string, toothNumber: number) => `/api/patients/${id}/dental-chart/${toothNumber}`,
     DENTAL_CHART_CUSTOM: (id: string) => `/api/patients/${id}/dental-chart/custom`,
