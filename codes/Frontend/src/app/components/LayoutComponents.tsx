@@ -1,26 +1,31 @@
 import { NavLink } from 'react-router';
 import { useEffect, useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Clock, 
-  GraduationCap, 
-  BarChart3, 
-  Package, 
+import {
+  LayoutDashboard,
+  Users,
+  Clock,
+  GraduationCap,
+  BarChart3,
+  Package,
   Settings,
   LogOut,
   UserCog,
-  ListChecks
-  ,
-  ClipboardCheck
+  ListChecks,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Badge, Button } from './UI';
+import { Badge, Button, cn } from './UI';
 import { apiService } from '../services/api';
 
 const formatUnderscoreLabel = (value?: string | null) => String(value || '').replace(/_/g, ' ');
 
-export function Sidebar() {
+export function Sidebar({
+  collapsed = false,
+  onToggle,
+}: {
+  collapsed?: boolean;
+  onToggle?: () => void;
+}) {
   const { user } = useAuth();
   const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   const mustChangePassword = Boolean(user?.must_change_password);
@@ -90,54 +95,109 @@ export function Sidebar() {
       ].filter((item) => item.visible);
 
   return (
-    <aside className="w-64 border-r border-gray-100 bg-white h-screen flex flex-col sticky top-0">
-      <div className="p-6">
-        <h1 className="text-xl font-bold text-blue-900 flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white">
-            <span className="text-xs font-black">OW</span>
-          </div>
-          OrthoFlow
-        </h1>
+    <aside
+      className={cn(
+        'h-screen shrink-0 border-r border-gray-100 bg-white sticky top-0 flex flex-col transition-all duration-200',
+        collapsed ? 'w-20' : 'w-64'
+      )}
+    >
+      <div
+        className={cn(
+          'border-b border-gray-100',
+          collapsed ? 'px-3 py-4' : 'px-4 py-4'
+        )}
+      >
+        <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-3')}>
+          {!collapsed && (
+            <div className="group min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm transition-all duration-200 hover:border-blue-200 hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-blue-700 via-blue-500 to-cyan-400 transition-transform duration-200 group-hover:scale-y-110" />
+                <div className="min-w-0 flex-1">
+                  <h1
+                    className="truncate text-[1.05rem] font-black tracking-tight text-slate-900 transition-colors duration-200 group-hover:text-blue-800"
+                    title="OrthoFlow"
+                  >
+                    OrthoFlow
+                  </h1>
+                </div>
+              </div>
+            </div>
+          )}
+          {onToggle && (
+            <Button
+              type="button"
+              onClick={onToggle}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-blue-500 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white shadow-[0_10px_24px_-12px_rgba(37,99,235,0.75)] transition-all duration-200 hover:-translate-y-0.5 hover:from-blue-500 hover:via-blue-600 hover:to-cyan-500 hover:shadow-[0_14px_28px_-14px_rgba(6,182,212,0.75)] focus:ring-blue-500"
+            >
+              <span className="pointer-events-none absolute inset-x-1 top-1 h-1/2 rounded-full bg-white/18 blur-md" />
+              <span className="relative text-[1.1rem] font-semibold leading-none">
+                {collapsed ? '›' : '‹'}
+              </span>
+            </Button>
+          )}
+        </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className={cn('flex-1 space-y-1 py-4', collapsed ? 'px-2' : 'px-4')}>
         {mustChangePassword && (
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-            Change your temporary password to unlock the rest of the system.
+          <div
+            className={cn(
+              'mb-4 rounded-lg border border-amber-200 bg-amber-50 text-xs font-medium text-amber-800',
+              collapsed ? 'px-2 py-3 text-center' : 'px-3 py-2'
+            )}
+            title={collapsed ? 'Change your temporary password to unlock the rest of the system.' : undefined}
+          >
+            {collapsed ? 'PW' : 'Change your temporary password to unlock the rest of the system.'}
           </div>
         )}
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
+            title={collapsed ? item.name : undefined}
             className={({ isActive }) => `
-              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group
+              flex items-center rounded-lg text-sm font-medium transition-all group relative
+              ${collapsed ? 'justify-center px-2 py-3' : 'gap-3 px-3 py-2.5'}
               ${isActive 
                 ? 'bg-blue-50 text-blue-700' 
                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
             `}
           >
             <item.icon className="w-5 h-5" />
-            <span>{item.name}</span>
+            {!collapsed && <span>{item.name}</span>}
             {item.name === 'Request Approvals' && pendingApprovalCount > 0 && (
-              <span className="ml-auto inline-flex min-w-[1.3rem] h-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
+              <span
+                className={cn(
+                  'inline-flex h-5 min-w-[1.3rem] items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white',
+                  collapsed ? 'absolute right-1 top-1' : 'ml-auto'
+                )}
+              >
                 {pendingApprovalCount}
               </span>
             )}
-            {/* Optional indicator for active */}
           </NavLink>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
-        <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+      <div className={cn('border-t border-gray-100', collapsed ? 'p-3' : 'p-4')}>
+        <div
+          className={cn(
+            'bg-gray-50 rounded-lg',
+            collapsed ? 'flex justify-center p-2' : 'flex items-center gap-3 p-2'
+          )}
+          title={collapsed ? `${user?.name || ''} (${formatUnderscoreLabel(user?.role)})` : undefined}
+        >
           <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
             {user?.name.charAt(0)}
           </div>
-          <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
-            <Badge variant="blue">{formatUnderscoreLabel(user?.role)}</Badge>
-          </div>
+          {!collapsed && (
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
+              <Badge variant="blue">{formatUnderscoreLabel(user?.role)}</Badge>
+            </div>
+          )}
         </div>
       </div>
     </aside>

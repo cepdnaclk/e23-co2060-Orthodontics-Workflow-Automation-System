@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider, Outlet, Navigate, useLocation } from "react-router";
+import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Layout & Components
@@ -19,6 +20,20 @@ import { RequestApprovalsPage } from './pages/RequestApprovalsPage';
 function MainLayout() {
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const savedState = window.localStorage.getItem('orthoflow-sidebar-collapsed');
+    setSidebarCollapsed(savedState === 'true');
+  }, []);
+
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      window.localStorage.setItem('orthoflow-sidebar-collapsed', String(next));
+      return next;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -38,7 +53,7 @@ function MainLayout() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
-      <Sidebar />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={handleSidebarToggle} />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar />
         <main className="flex-1 overflow-y-auto p-6 lg:p-10">
