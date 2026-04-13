@@ -856,6 +856,22 @@ export const apiService = {
       const queryString = query.toString();
       return apiClient.get<any>(`${API_ENDPOINTS.REPORTS.VISIT_SUMMARY}${queryString ? `?${queryString}` : ''}`);
     },
+    paymentSummary: (params?: {
+      start_date?: string;
+      end_date?: string;
+      group_by?: string;
+      status?: string;
+      payment_method?: string;
+    }) => {
+      const query = new URLSearchParams();
+      if (params?.start_date) query.append('start_date', params.start_date);
+      if (params?.end_date) query.append('end_date', params.end_date);
+      if (params?.group_by) query.append('group_by', params.group_by);
+      if (params?.status) query.append('status', params.status);
+      if (params?.payment_method) query.append('payment_method', params.payment_method);
+      const queryString = query.toString();
+      return apiClient.get<any>(`${API_ENDPOINTS.REPORTS.PAYMENT_SUMMARY}${queryString ? `?${queryString}` : ''}`);
+    },
     inventoryAlerts: (alert_type?: string) =>
       apiClient.get<any>(`${API_ENDPOINTS.REPORTS.INVENTORY_ALERTS}${alert_type ? `?alert_type=${alert_type}` : ''}`),
     auditLogs: (params?: {

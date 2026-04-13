@@ -21,6 +21,11 @@ router.get('/visit-summary',
   asyncHandler(reportController.getVisitSummaryReport)
 );
 
+// GET /api/reports/payment-summary - Get payment summary report
+router.get('/payment-summary',
+  asyncHandler(reportController.getPaymentSummaryReport)
+);
+
 // GET /api/reports/inventory-alerts - Get inventory alerts report
 router.get('/inventory-alerts', 
   asyncHandler(reportController.getInventoryAlertsReport)

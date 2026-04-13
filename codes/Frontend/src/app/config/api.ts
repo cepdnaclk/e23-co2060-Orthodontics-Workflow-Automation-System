@@ -162,6 +162,7 @@ export const API_ENDPOINTS = {
   REPORTS: {
     PATIENT_STATUS: '/api/reports/patient-status',
     VISIT_SUMMARY: '/api/reports/visit-summary',
+    PAYMENT_SUMMARY: '/api/reports/payment-summary',
     INVENTORY_ALERTS: '/api/reports/inventory-alerts',
     DASHBOARD: '/api/reports/dashboard',
     AUDIT_LOGS: '/api/reports/audit-logs',

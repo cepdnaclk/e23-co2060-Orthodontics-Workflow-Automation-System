@@ -8,6 +8,24 @@ const parsePositiveInt = (value, fallback) => {
   return parsed;
 };
 
+const buildDateFilter = ({ start_date, end_date }, columnName) => {
+  let clause = '';
+  const params = [];
+
+  if (start_date && end_date) {
+    clause = `AND ${columnName} BETWEEN ? AND ?`;
+    params.push(start_date, end_date);
+  } else if (start_date) {
+    clause = `AND ${columnName} >= ?`;
+    params.push(start_date);
+  } else if (end_date) {
+    clause = `AND ${columnName} <= ?`;
+    params.push(end_date);
+  }
+
+  return { clause, params };
+};
+
 // Get patient status report
 const getPatientStatusReport = async (req, res) => {
   try {
@@ -108,19 +126,8 @@ const getVisitSummaryReport = async (req, res) => {
   try {
     const { start_date, end_date, provider_id, group_by = 'month' } = req.query;
 
-    let dateFilter = '';
-    let queryParams = [];
-
-    if (start_date && end_date) {
-      dateFilter = 'AND visit_date BETWEEN ? AND ?';
-      queryParams = [start_date, end_date];
-    } else if (start_date) {
-      dateFilter = 'AND visit_date >= ?';
-      queryParams = [start_date];
-    } else if (end_date) {
-      dateFilter = 'AND visit_date <= ?';
-      queryParams = [end_date];
-    }
+    const { clause: dateFilter, params: dateParams } = buildDateFilter(req.query, 'visit_date');
+    const queryParams = [...dateParams];
 
     let providerFilter = '';
     if (provider_id) {
@@ -228,6 +235,127 @@ const getVisitSummaryReport = async (req, res) => {
     });
   } catch (error) {
     console.error('Get visit summary report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+// Get payment summary report
+const getPaymentSummaryReport = async (req, res) => {
+  try {
+    const { group_by = 'month', status, payment_method } = req.query;
+    const { clause: dateFilter, params: dateParams } = buildDateFilter(req.query, 'payment_date');
+
+    let groupByClause;
+    switch (group_by) {
+      case 'day':
+        groupByClause = 'DATE(payment_date)';
+        break;
+      case 'week':
+        groupByClause = 'YEARWEEK(payment_date)';
+        break;
+      case 'payment_method':
+        groupByClause = 'payment_method';
+        break;
+      case 'status':
+        groupByClause = 'status';
+        break;
+      case 'month':
+      default:
+        groupByClause = 'DATE_FORMAT(payment_date, "%Y-%m")';
+        break;
+    }
+
+    const extraClauses = [];
+    const extraParams = [];
+
+    if (status) {
+      extraClauses.push('AND status = ?');
+      extraParams.push(String(status));
+    }
+
+    if (payment_method) {
+      extraClauses.push('AND payment_method = ?');
+      extraParams.push(String(payment_method));
+    }
+
+    const reportParams = [...dateParams, ...extraParams];
+
+    const trends = await query(
+      `SELECT
+         ${groupByClause} AS group_key,
+         COUNT(*) AS total_records,
+         ROUND(SUM(amount), 2) AS total_amount,
+         ROUND(AVG(amount), 2) AS average_amount,
+         COUNT(CASE WHEN status = 'PAID' THEN 1 END) AS paid_records,
+         COUNT(CASE WHEN status = 'PENDING' THEN 1 END) AS pending_records,
+         COUNT(CASE WHEN status = 'REFUNDED' THEN 1 END) AS refunded_records
+       FROM payment_records
+       WHERE deleted_at IS NULL
+         ${dateFilter}
+         ${extraClauses.join('\n         ')}
+       GROUP BY ${groupByClause}
+       ORDER BY group_key DESC`,
+      reportParams
+    );
+
+    const overviewRows = await query(
+      `SELECT
+         COUNT(*) AS total_records,
+         ROUND(SUM(amount), 2) AS total_amount,
+         ROUND(SUM(CASE WHEN status = 'PAID' THEN amount ELSE 0 END), 2) AS paid_amount,
+         ROUND(SUM(CASE WHEN status = 'PENDING' THEN amount ELSE 0 END), 2) AS pending_amount,
+         ROUND(SUM(CASE WHEN status = 'REFUNDED' THEN amount ELSE 0 END), 2) AS refunded_amount,
+         ROUND(AVG(amount), 2) AS average_payment,
+         COUNT(DISTINCT patient_id) AS unique_patients
+       FROM payment_records
+       WHERE deleted_at IS NULL
+         ${dateFilter}
+         ${extraClauses.join('\n         ')}`,
+      reportParams
+    );
+
+    const methodBreakdown = await query(
+      `SELECT
+         payment_method,
+         COUNT(*) AS record_count,
+         ROUND(SUM(amount), 2) AS total_amount
+       FROM payment_records
+       WHERE deleted_at IS NULL
+         ${dateFilter}
+         ${extraClauses.join('\n         ')}
+       GROUP BY payment_method
+       ORDER BY total_amount DESC, record_count DESC`,
+      reportParams
+    );
+
+    const statusBreakdown = await query(
+      `SELECT
+         status,
+         COUNT(*) AS record_count,
+         ROUND(SUM(amount), 2) AS total_amount
+       FROM payment_records
+       WHERE deleted_at IS NULL
+         ${dateFilter}
+         ${extraClauses.join('\n         ')}
+       GROUP BY status
+       ORDER BY total_amount DESC, record_count DESC`,
+      reportParams
+    );
+
+    res.json({
+      success: true,
+      data: {
+        overview: overviewRows[0] || {},
+        trends,
+        method_breakdown: methodBreakdown,
+        status_breakdown: statusBreakdown
+      }
+    });
+  } catch (error) {
+    console.error('Get payment summary report error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -603,6 +731,7 @@ const getAuditLogsReport = async (req, res) => {
 module.exports = {
   getPatientStatusReport,
   getVisitSummaryReport,
+  getPaymentSummaryReport,
   getInventoryAlertsReport,
   getDashboardReport,
   getAuditLogsReport
