@@ -37,6 +37,7 @@
     "mysql2": "^3.6.5",
     "nodemailer": "^8.0.1",
     "open": "^8.4.2",
+    "playwright": "^1.59.1",
     "uuid": "^9.0.1"
   },
   "engines": {

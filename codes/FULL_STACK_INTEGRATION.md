@@ -1,6 +1,6 @@
 # OrthoFlow Full-Stack Integration Guide
 
-This document reflects the current repository state as of March 10, 2026.
+This document reflects the current repository state as of April 26, 2026.
 
 ## 1. Current Stack
 
@@ -9,30 +9,64 @@ This document reflects the current repository state as of March 10, 2026.
 - Authentication: email/password plus Google Sign-In using Google ID tokens
 - Session model: JWT access token + refresh token with inactivity timeout enforcement
 - File handling: Multer uploads, document download endpoints, dental-chart PDF export with Playwright fallback support
+- Startup helper: `codes/start.sh` auto-installs missing dependencies, bootstraps the database, ensures an admin, starts both services, and opens the frontend
 
 ## 2. Repository Layout
 
 ```text
-Orthodontics Workflow Automation System/
-├── Backend/
-│   ├── server.js
-│   ├── .env
-│   ├── database-schema.sql
-│   ├── scripts/
-│   │   ├── migrate.js
-│   │   └── seed.js
-│   └── src/
-│       ├── controllers/
-│       ├── middleware/
-│       ├── routes/
-│       └── services/
-├── Frontend/
-│   ├── .env
-│   └── src/app/
-└── start.sh
+e23-co2060-Orthodontics-Workflow-Automation-System/
+├── README.md
+├── docs/
+└── codes/
+    ├── start.sh
+    ├── QUICK_DEPLOY.md
+    ├── FULL_STACK_INTEGRATION.md
+    ├── Backend/
+    │   ├── server.js
+    │   ├── .env
+    │   ├── database-schema.sql
+    │   ├── scripts/
+    │   │   ├── bootstrap-database.js
+    │   │   ├── ensure-admin.js
+    │   │   ├── migrate.js
+    │   │   └── seed.js
+    │   └── src/
+    │       ├── config/
+    │       ├── controllers/
+    │       ├── middleware/
+    │       ├── routes/
+    │       └── services/
+    └── Frontend/
+        ├── .env
+        └── src/app/
 ```
 
-## 3. Backend Integration Surface
+## 3. Startup Flow
+
+The current new-device startup path is `codes/start.sh`.
+
+Line by line, the helper performs this flow:
+
+1. Moves into the script directory and resolves `Backend` and `Frontend` under `codes`.
+2. Verifies `node` and `npm`.
+3. Checks for the MySQL CLI, but only warns if it is missing because Node handles database bootstrap.
+4. Requires `Backend/.env`.
+5. Reads `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, and `GOOGLE_CLIENT_ID` from `Backend/.env`.
+6. Requires `DB_NAME` and `DB_USER`; defaults host to `localhost` and port to `3306`.
+7. Creates `Frontend/.env` if missing.
+8. Adds `VITE_GOOGLE_CLIENT_ID` to `Frontend/.env` from backend `GOOGLE_CLIENT_ID` when available.
+9. Installs backend dependencies only when `Backend/node_modules` is missing.
+10. Runs `npm run bootstrap-db`.
+11. Runs `npm run ensure-admin`.
+12. Starts backend with `npm run dev` unless port `3000` is already listening.
+13. Waits for `http://localhost:3000/health`.
+14. Installs frontend dependencies only when `Frontend/node_modules` is missing.
+15. Starts frontend with `npm run dev` unless port `5173` is already listening.
+16. Waits for `http://localhost:5173`.
+17. Opens `http://localhost:5173`.
+18. Keeps the script alive and stops managed backend/frontend child processes on `Ctrl+C`.
+
+## 4. Backend Integration Surface
 
 `Backend/server.js` starts the API, validates the DB connection, ensures access-control schema updates exist, and starts two background jobs:
 
@@ -46,6 +80,8 @@ Current API roots:
 - `/api/visits`
 - `/api/documents`
 - `/api/clinical-notes`
+- `/api/payment-records`
+- `/api/patient-materials`
 - `/api/queue`
 - `/api/cases`
 - `/api/inventory`
@@ -58,9 +94,11 @@ Operational endpoints:
 - `GET /api`
 - static uploads at `/uploads`
 
-## 4. Frontend Integration Surface
+## 5. Frontend Integration Surface
 
-The frontend router currently exposes these authenticated pages:
+The active application router is in `Frontend/src/app/App.tsx`.
+
+Current authenticated pages:
 
 - `/` dashboard
 - `/patients`
@@ -74,7 +112,7 @@ The frontend router currently exposes these authenticated pages:
 - `/admin/users`
 - `/admin/audit-logs`
 
-Role-gated navigation currently matches the shipped UI:
+Role-gated navigation and routes currently match the shipped UI:
 
 - All signed-in users: dashboard, patients, settings
 - Admin, orthodontist, dental surgeon, student, nurse, reception: clinic queue
@@ -86,26 +124,27 @@ Role-gated navigation currently matches the shipped UI:
 Important current implementation detail:
 
 - The frontend API base URL is hardcoded to `http://localhost:3000` in `Frontend/src/app/config/api.ts`
-- The frontend uses `Frontend/.env` for `VITE_GOOGLE_CLIENT_ID`
+- The frontend reads `Frontend/.env` for `VITE_GOOGLE_CLIENT_ID`
+- `codes/start.sh` creates `Frontend/.env` when missing and copies backend `GOOGLE_CLIENT_ID` into it when available
 - For any non-localhost deployment, the frontend API base must be changed in code unless a reverse proxy preserves that backend origin
 
-## 5. Core Implemented Domains
+## 6. Core Implemented Domains
 
 Current end-to-end domains in the codebase:
 
-- authentication and token refresh
-- user management with admin-created accounts and password reset email flow
-- patient directory with filters, inactive/reactivate flow, and assignment management
+- authentication, Google Sign-In, token refresh, logout, profile update, and password change
+- user management with admin-created accounts, soft delete/reactivation, permanent delete, and password reset email flow
+- patient directory with filters, inactive/reactivate flow, record export, and assignment management
 - pending assignment approval workflow for orthodontists and dental surgeons
-- patient profile tabs for overview, visits, patient history, dental chart, documents, diagnosis, and treatment plan/notes
-- visit scheduling and reminder sending
+- patient profile tabs for overview, visits, patient history, dental chart, documents, diagnosis, treatment plan/notes, payment records, and material usage
+- visit scheduling and manual/automatic reminder sending
 - clinic queue management
 - student case tracking
 - inventory/materials management with stock updates and restore flow
 - reports dashboard for admin
 - audit log browsing for admin
 
-## 6. Security and Access Model
+## 7. Security and Access Model
 
 Current security behavior in the running system:
 
@@ -124,9 +163,9 @@ Notable current access behavior:
 - orthodontist and dental surgeon workflows are assignment-aware
 - diagnosis and treatment access differs by role and patient assignment
 
-## 7. Required Environment Configuration
+## 8. Environment Configuration
 
-Backend environment comes from `Backend/.env`.
+Backend environment comes from `codes/Backend/.env`. This file is required before running `codes/start.sh`.
 
 Minimum backend values:
 
@@ -140,8 +179,8 @@ DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=orthoflow
 
-JWT_SECRET=change_this
-JWT_REFRESH_SECRET=change_this
+JWT_SECRET=change_this_to_a_long_random_value
+JWT_REFRESH_SECRET=change_this_to_a_different_long_random_value
 JWT_EXPIRE=24h
 JWT_REFRESH_EXPIRE=7d
 SESSION_TIMEOUT_SECONDS=3600
@@ -173,84 +212,83 @@ Other active backend settings supported today:
 - `RATE_LIMIT_MAX_REQUESTS`
 - `LOG_LEVEL`
 
-Seed admin behavior:
-
-- `SEED_ADMIN_NAME` and `SEED_ADMIN_EMAIL` control the initial seeded admin identity
-- `SEED_ADMIN_DEPARTMENT` defaults to `Orthodontics`
-- if `SEED_ADMIN_PASSWORD` is blank, `npm run seed` generates a temporary password and forces password change on first login
-- if `SEED_ADMIN_PASSWORD` is provided, that password is used and `must_change_password` is not set by seed
-
 Frontend environment:
 
 ```env
 VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
 
-## 8. Local Full-Stack Startup
+The startup helper can create `Frontend/.env` automatically from backend `GOOGLE_CLIENT_ID`.
 
-### Backend
+## 9. Database and Admin Scripts
 
-From `Backend/`:
+Normal startup uses:
 
 ```bash
-npm install
+cd codes/Backend
+npm run bootstrap-db
+npm run ensure-admin
+```
+
+`bootstrap-db` behavior:
+
+- connects using `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`
+- creates the configured database from `database-schema.sql` when it is missing or empty
+- runs runtime schema guards from `Backend/src/config/database.js`
+- keeps existing OrthoFlow data when the `users` table already exists
+- refuses to initialize a non-empty unknown database without an OrthoFlow `users` table
+
+`ensure-admin` behavior:
+
+- checks for an active `ADMIN`
+- does nothing when one exists
+- creates or promotes the `SEED_ADMIN_EMAIL` user when no active admin exists
+- uses `SEED_ADMIN_PASSWORD` when provided
+- generates and prints a temporary password when `SEED_ADMIN_PASSWORD` is blank
+- sends or simulates the temporary password email according to email settings
+
+Manual reset/development scripts:
+
+```bash
 npm run migrate
 npm run seed
+```
+
+Use these carefully. Migration applies `database-schema.sql`, which drops and recreates the configured schema. Seeding clears application tables before inserting baseline system settings and the admin account.
+
+## 10. Local Full-Stack Startup
+
+From the repository root:
+
+```bash
+./codes/start.sh
+```
+
+From inside `codes`:
+
+```bash
+./start.sh
+```
+
+Backend-only startup:
+
+```bash
+cd codes/Backend
+npm install
+npm run bootstrap-db
+npm run ensure-admin
 npm run dev
 ```
 
-Notes:
-
-- `npm run migrate` prepares the schema
-- `npm run seed` clears existing seeded tables and reloads baseline data
-- `npm run dev` currently runs `node server.js`
-
-### Frontend
-
-From `Frontend/`:
+Frontend-only startup:
 
 ```bash
+cd codes/Frontend
 npm install
 npm run dev
 ```
 
-### Two-terminal startup
-
-```bash
-cd Backend && npm run dev
-cd Frontend && npm run dev
-```
-
-### Helper script
-
-From repo root:
-
-```bash
-./start-orthoflow.sh
-```
-
-Current helper-script behavior:
-
-- reuses existing listeners on ports `3000` and `5173`
-- waits for backend `/health`
-- waits for frontend root page
-- opens the frontend in the default browser
-- stops child processes on `Ctrl+C`
-
-## 9. Seeded Local Account
-
-`Backend/scripts/seed.js` currently creates one baseline admin user from `Backend/.env`:
-
-- email: `SEED_ADMIN_EMAIL` or `admin@orthoflow.edu`
-- name: `SEED_ADMIN_NAME` or `System Administrator`
-- department: `SEED_ADMIN_DEPARTMENT` or `Orthodontics`
-- password:
-  - `SEED_ADMIN_PASSWORD` if provided
-  - otherwise an auto-generated temporary password printed by the seed command
-
-If the password is auto-generated, the seeded admin must change it after the first login.
-
-## 10. Google Sign-In
+## 11. Google Sign-In
 
 Google login is implemented but only works when both sides use a valid client ID.
 
@@ -258,21 +296,20 @@ Required setup:
 
 1. Create a Google OAuth web client.
 2. Add `http://localhost:5173` to authorized JavaScript origins.
-3. Put the same client ID in:
-   - `Backend/.env` as `GOOGLE_CLIENT_ID`
-   - `Frontend/.env` as `VITE_GOOGLE_CLIENT_ID`
+3. Put the same client ID in `Backend/.env` as `GOOGLE_CLIENT_ID`.
+4. Let `start.sh` copy it to `Frontend/.env`, or manually set `VITE_GOOGLE_CLIENT_ID`.
 
 Current backend behavior:
 
 - validates Google ID token audience against `GOOGLE_CLIENT_ID`
 - accepts comma-separated backend client IDs if needed
 
-## 11. Operational Validation
+## 12. Operational Validation
 
 Recommended manual validation after startup:
 
 1. Open `http://localhost:3000/health` and confirm the backend responds.
 2. Open `http://localhost:5173` and confirm the frontend loads.
-3. Sign in with an account appropriate for the workflow you want to validate.
-4. Verify patients, queue, materials, and admin-only pages behave according to role.
-5. Confirm save, delete, restore, and download actions show visible feedback in the UI.
+3. Sign in with the configured or generated admin account.
+4. Verify patients, queue, materials, reports, user management, and audit log pages according to role.
+5. Confirm save, delete, restore, reset-password, and download actions show visible feedback in the UI.

@@ -283,7 +283,7 @@ CREATE TABLE queue (
     patient_id INT NOT NULL,
     provider_id INT NULL,
     student_id INT NULL,
-    status ENUM('WAITING', 'IN_TREATMENT', 'PREPARATION', 'COMPLETED') DEFAULT 'WAITING',
+    status ENUM('IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED') DEFAULT 'IN_WAITING_ROOM',
     priority ENUM('LOW', 'NORMAL', 'HIGH', 'URGENT') DEFAULT 'NORMAL',
     procedure_type VARCHAR(255),
     arrival_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -482,7 +482,7 @@ FROM queue q
 JOIN patients p ON q.patient_id = p.id
 LEFT JOIN users u ON q.provider_id = u.id
 LEFT JOIN users s ON q.student_id = s.id
-WHERE q.status != 'COMPLETED'
+WHERE q.arrival_time >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
 ORDER BY q.priority DESC, q.arrival_time ASC;
 
 -- Student Progress View

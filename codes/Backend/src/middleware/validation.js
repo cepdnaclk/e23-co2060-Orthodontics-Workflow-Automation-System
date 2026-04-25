@@ -277,13 +277,14 @@ const schemas = {
     }),
     provider_id: Joi.number().integer().positive().optional(),
     student_id: Joi.number().integer().positive().optional(),
+    status: Joi.string().valid('IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED').optional(),
     priority: Joi.string().valid('LOW', 'NORMAL', 'HIGH', 'URGENT').optional(),
     procedure_type: Joi.string().max(255).optional(),
     notes: Joi.string().max(1000).optional()
   }),
 
   updateQueueStatus: Joi.object({
-    status: Joi.string().valid('WAITING', 'IN_TREATMENT', 'PREPARATION', 'COMPLETED').required().messages({
+    status: Joi.string().valid('IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED').required().messages({
       'any.required': 'Status is required'
     }),
     notes: Joi.string().max(1000).optional()

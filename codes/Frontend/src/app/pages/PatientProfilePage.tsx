@@ -619,6 +619,14 @@ function HistoryTab({
       .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
       .join(' ');
 
+  const sexLabel = (value?: string | null) => {
+    const normalized = String(value || '').trim().toUpperCase();
+    if (normalized === 'M' || normalized === 'MALE') return 'Male';
+    if (normalized === 'F' || normalized === 'FEMALE') return 'Female';
+    if (normalized === 'O' || normalized === 'OTHER') return 'Other';
+    return value || '-';
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -628,7 +636,7 @@ function HistoryTab({
           <div><span className="font-semibold text-gray-600">Age:</span> {auto?.age ?? '-'}</div>
           <div><span className="font-semibold text-gray-600">Birthday:</span> {auto?.birthday || '-'}</div>
           <div><span className="font-semibold text-gray-600">Address:</span> {auto?.address || '-'}</div>
-          <div><span className="font-semibold text-gray-600">Sex:</span> {auto?.sex || '-'}</div>
+          <div><span className="font-semibold text-gray-600">Sex:</span> {sexLabel(auto?.sex)}</div>
           <div><span className="font-semibold text-gray-600">Telephone No:</span> {auto?.telephone || '-'}</div>
           <div><span className="font-semibold text-gray-600">Province:</span> {auto?.province || '-'}</div>
           <div><span className="font-semibold text-gray-600">Date of Examination:</span> {auto?.date_of_examination || '-'}</div>

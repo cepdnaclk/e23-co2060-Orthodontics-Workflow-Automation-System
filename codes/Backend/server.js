@@ -34,6 +34,11 @@ const reportRoutes = require('./src/routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isQuietPollingRequest = (req, res) => (
+  req.method === 'GET' &&
+  req.originalUrl === '/api/patients/assignment-requests/pending' &&
+  res.statusCode < 400
+);
 
 // Security middleware
 app.use(helmet({
@@ -63,7 +68,7 @@ app.use(express.static('public'));
 
 // Development logging
 if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+  app.use(morgan('dev', { skip: isQuietPollingRequest }));
 }
 
 // Static file serving for uploads
