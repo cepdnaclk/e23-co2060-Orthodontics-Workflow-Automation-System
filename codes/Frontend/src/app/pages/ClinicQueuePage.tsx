@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, Badge, Button, Input, RefreshButton, cn } from '../components/UI';
+import { Card, Badge, Button, Input, RefreshButton, Table, cn } from '../components/UI';
 import { Clock, Plus, Search, Trash2, X } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -30,36 +30,36 @@ type PatientOption = {
 const STATUS_META: Record<QueueStatus, {
   label: string;
   shortLabel: string;
-  border: string;
+  text: string;
   badge: string;
 }> = {
   IN_WAITING_ROOM: {
     label: 'In Waiting Room',
     shortLabel: 'Waiting',
-    border: 'border-t-amber-400',
+    text: 'text-amber-600',
     badge: 'border-amber-200 bg-amber-50 text-amber-700'
   },
   UNDER_CONSULTATION: {
     label: 'Under Consultation',
     shortLabel: 'Consultation',
-    border: 'border-t-sky-500',
+    text: 'text-sky-600',
     badge: 'border-sky-200 bg-sky-50 text-sky-700'
   },
   UNDER_TREATMENT: {
     label: 'Under Treatment',
     shortLabel: 'Treatment',
-    border: 'border-t-violet-500',
+    text: 'text-violet-600',
     badge: 'border-violet-200 bg-violet-50 text-violet-700'
   },
   COMPLETED: {
     label: 'Completed',
     shortLabel: 'Completed',
-    border: 'border-t-emerald-500',
+    text: 'text-emerald-600',
     badge: 'border-emerald-200 bg-emerald-50 text-emerald-700'
   }
 };
 
-const QUEUE_ROLES = ['ADMIN', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
+const QUEUE_ROLES = ['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
 
 export function ClinicQueuePage() {
   const { user } = useAuth();
@@ -82,7 +82,7 @@ export function ClinicQueuePage() {
   const canAddToQueue = role === 'RECEPTION';
   const canDeleteQueue = role === 'RECEPTION';
   const canUpdateQueue = ['RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(role);
-  const isReadOnly = role === 'ADMIN';
+  const isReadOnly = role === 'ADMIN' || role === 'NURSE';
 
   const loadPatientOptions = async () => {
     if (!canAddToQueue) return;
@@ -134,18 +134,6 @@ export function ClinicQueuePage() {
     () => patients.find((p) => String(p.id) === selectedPatientId) || null,
     [patients, selectedPatientId]
   );
-
-  const groupedItems = useMemo(() => {
-    return QUEUE_STATUSES.reduce<Record<QueueStatus, QueueItem[]>>((acc, status) => {
-      acc[status] = items.filter((item) => item.status === status);
-      return acc;
-    }, {
-      IN_WAITING_ROOM: [],
-      UNDER_CONSULTATION: [],
-      UNDER_TREATMENT: [],
-      COMPLETED: []
-    });
-  }, [items]);
 
   const addToQueue = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,49 +196,13 @@ export function ClinicQueuePage() {
     </span>
   );
 
-  const queueCard = (item: QueueItem) => (
-    <div key={item.id} className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-      <div className="flex justify-between items-start gap-3">
-        <div className="min-w-0">
-          <h4 className="font-bold text-gray-900 truncate">{item.patient_name}</h4>
-          <p className="text-xs text-gray-500">MRN: {item.patient_code}</p>
-        </div>
-        {statusBadge(item.status)}
-      </div>
-      <div className="mt-3 text-xs text-gray-600 space-y-1">
-        <p>Assigned staff: {item.assigned_clinical_staff || 'Unassigned'}</p>
-        <p>Wait: {item.wait_time_minutes ?? '-'} min</p>
-        <p>Arrival: {String(item.arrival_time || '').slice(0, 16).replace('T', ' ')}</p>
-      </div>
-      {(canUpdateQueue || canDeleteQueue) && !isReadOnly && (
-        <div className="mt-4 flex flex-col gap-2">
-          {canUpdateQueue && (
-            <select
-              className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800"
-              value={item.status}
-              onChange={(e) => updateStatus(item, e.target.value as QueueStatus)}
-              disabled={updatingId === item.id}
-            >
-              {QUEUE_STATUSES.map((status) => (
-                <option key={status} value={status}>{STATUS_META[status].label}</option>
-              ))}
-            </select>
-          )}
-          {canDeleteQueue && (
-            <Button
-              variant="danger"
-              size="sm"
-              className="w-fit"
-              onClick={() => setDeleteTarget(item)}
-            >
-              <Trash2 className="w-4 h-4 mr-1" />
-              Delete
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const statCards = [
+    { label: 'Total in Queue', value: stats?.total_in_queue ?? 0, className: 'text-gray-900' },
+    { label: 'Waiting', value: stats?.waiting_count ?? 0, className: STATUS_META.IN_WAITING_ROOM.text },
+    { label: 'Consultation', value: stats?.under_consultation_count ?? 0, className: STATUS_META.UNDER_CONSULTATION.text },
+    { label: 'Treatment', value: stats?.under_treatment_count ?? 0, className: STATUS_META.UNDER_TREATMENT.text },
+    { label: 'Completed', value: stats?.completed_count ?? 0, className: STATUS_META.COMPLETED.text },
+  ];
 
   if (!canViewQueue) {
     return (
@@ -286,51 +238,88 @@ export function ClinicQueuePage() {
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <div className="xl:col-span-4 grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-4 gap-6">
-          {QUEUE_STATUSES.map((status) => (
-            <Card key={status} className={cn('p-4 border-t-4 min-h-[18rem]', STATUS_META[status].border)}>
-              <h3 className="font-bold flex items-center gap-2 mb-4">
-                {STATUS_META[status].label}
-                <Badge variant={status === 'COMPLETED' ? 'success' : status === 'IN_WAITING_ROOM' ? 'warning' : 'blue'}>
-                  {groupedItems[status].length}
-                </Badge>
-              </h3>
-              <div className="space-y-3">
-                {groupedItems[status].length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
-                    No patients
-                  </div>
-                ) : groupedItems[status].map(queueCard)}
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <Card className="p-4 bg-gray-50/50 h-fit">
-          <h3 className="font-bold mb-4">Daily Statistics</h3>
-          <div className="space-y-3 text-sm">
-            {[
-              ['Total in queue', stats?.total_in_queue ?? 0],
-              ['Waiting', stats?.waiting_count ?? 0],
-              ['Under consultation', stats?.under_consultation_count ?? 0],
-              ['Under treatment', stats?.under_treatment_count ?? 0],
-              ['Completed', stats?.completed_count ?? 0],
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between p-2 bg-white rounded border border-gray-100">
-                <span>{label}</span>
-                <span className="font-bold">{value}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        {statCards.map((card) => (
+          <Card key={card.label} className="p-5">
+            <p className="text-sm font-medium text-gray-500">{card.label}</p>
+            <p className={cn('mt-2 text-3xl font-extrabold', card.className)}>{card.value}</p>
+          </Card>
+        ))}
       </div>
 
-      {loading && (
-        <div className="text-sm text-gray-500 flex items-center gap-2">
-          <Clock className="w-4 h-4" /> Loading queue...
+      <Card className="p-0">
+        <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-6 py-4">
+          <div>
+            <h3 className="font-bold text-gray-900">Queue Entries</h3>
+            <p className="text-xs text-gray-500">
+              {items.length} {items.length === 1 ? 'patient' : 'patients'} visible in this queue view.
+            </p>
+          </div>
         </div>
-      )}
+        <Table tableClassName="w-full min-w-max text-sm text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Patient</th>
+              <th className="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Status</th>
+              <th className="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Assigned Staff</th>
+              <th className="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Wait</th>
+              <th className="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Arrival</th>
+              {!isReadOnly && <th className="px-6 py-4 font-semibold text-gray-600 text-center whitespace-nowrap">Actions</th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {!loading && items.map((item) => (
+              <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
+                <td className="px-6 py-4 align-middle whitespace-nowrap">
+                  <p className="font-semibold text-gray-900">{item.patient_name}</p>
+                  <p className="text-xs font-medium text-blue-600">MRN: {item.patient_code}</p>
+                </td>
+                <td className="px-6 py-4 align-middle whitespace-nowrap">{statusBadge(item.status)}</td>
+                <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
+                  {item.assigned_clinical_staff || 'Unassigned'}
+                </td>
+                <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
+                  {item.wait_time_minutes ?? '-'} min
+                </td>
+                <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
+                  {String(item.arrival_time || '').slice(0, 16).replace('T', ' ')}
+                </td>
+                {!isReadOnly && (
+                  <td className="px-6 py-4 align-middle text-center whitespace-nowrap">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {canUpdateQueue && (
+                        <select
+                          className="h-9 min-w-[12rem] rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800"
+                          value={item.status}
+                          onChange={(e) => updateStatus(item, e.target.value as QueueStatus)}
+                          disabled={updatingId === item.id}
+                        >
+                          {QUEUE_STATUSES.map((status) => (
+                            <option key={status} value={status}>{STATUS_META[status].label}</option>
+                          ))}
+                        </select>
+                      )}
+                      {canDeleteQueue && (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => setDeleteTarget(item)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+
+        {loading && <div className="p-8 text-sm text-gray-500 flex items-center gap-2"><Clock className="w-4 h-4" /> Loading queue...</div>}
+        {!loading && items.length === 0 && <div className="p-8 text-sm text-gray-500">No queue entries found.</div>}
+      </Card>
 
       {addOpen && canAddToQueue && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 backdrop-blur-[1px] p-4">

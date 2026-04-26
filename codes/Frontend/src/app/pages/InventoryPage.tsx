@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Badge, Button, Table, Input, RefreshButton } from '../components/UI';
-import { Plus, Search, Trash2, RotateCcw, Pencil, X } from 'lucide-react';
+import { Plus, Search, Trash2, RotateCcw, Pencil, X, PackagePlus } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -404,6 +404,11 @@ export function InventoryPage() {
           <p className="text-gray-500">Live inventory with stock updates and alerts.</p>
         </div>
         <div className="flex gap-2">
+          {canMutateInventory && deletedMode === 'active' && (
+            <Button className="flex items-center gap-2" onClick={openCreateEditor}>
+              <Plus className="w-4 h-4" /> Add Material
+            </Button>
+          )}
           <div className="inline-flex rounded-md border border-gray-200 overflow-hidden">
             <button
               type="button"
@@ -421,11 +426,6 @@ export function InventoryPage() {
             </button>
           </div>
           <RefreshButton onClick={loadInventory} loading={loading} />
-          {canMutateInventory && deletedMode === 'active' && (
-            <Button className="flex items-center gap-2" onClick={openCreateEditor}>
-              <Plus className="w-4 h-4" /> Add Material
-            </Button>
-          )}
         </div>
       </div>
 
@@ -497,7 +497,7 @@ export function InventoryPage() {
                         variant="secondary"
                         disabled={stockUpdatingId === item.id || processingId === item.id}
                         onClick={() => openEditEditor(item)}
-                        className="h-9 px-3"
+                        className="h-9 px-3 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 active:bg-blue-200"
                       >
                         <Pencil className="w-3 h-3 mr-1" />
                         Edit
@@ -507,7 +507,9 @@ export function InventoryPage() {
                         variant="secondary"
                         disabled={stockUpdatingId === item.id || processingId === item.id}
                         onClick={() => restock(item.id)}
+                        className="h-9 px-3 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200"
                       >
+                        <PackagePlus className="w-3 h-3 mr-1" />
                         Restock
                       </Button>
                       <Button
@@ -538,6 +540,7 @@ export function InventoryPage() {
                         disabled={processingId === item.id}
                         onClick={() => permanentlyDeleteItem(item.id, item.name)}
                       >
+                        <Trash2 className="w-3 h-3 mr-1" />
                         Delete Permanently
                       </Button>
                     </div>

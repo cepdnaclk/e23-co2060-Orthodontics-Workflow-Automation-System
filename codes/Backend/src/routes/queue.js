@@ -9,7 +9,7 @@ const router = express.Router();
 // Apply authentication to all routes
 router.use(authenticate);
 
-const queueRoles = ['ADMIN', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
+const queueRoles = ['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
 const queueMutationRoles = ['RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
 
 // GET /api/queue - Get current queue

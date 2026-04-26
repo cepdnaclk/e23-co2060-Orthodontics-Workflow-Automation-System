@@ -30,7 +30,7 @@ export function Sidebar({
   const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   const mustChangePassword = Boolean(user?.must_change_password);
 
-  const canSeeQueue = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'RECEPTION'].includes(user?.role || '');
+  const canSeeQueue = ['ADMIN', 'NURSE', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'RECEPTION'].includes(user?.role || '');
   const canSeeCases = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(user?.role || '');
   const canSeeReports = user?.role === 'ADMIN';
   const canSeeMaterials = ['ADMIN', 'NURSE'].includes(user?.role || '');

@@ -110,7 +110,7 @@ const router = createBrowserRouter([
       {
         path: "queue",
         element: (
-          <RequireRoles roles={['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'RECEPTION']}>
+          <RequireRoles roles={['ADMIN', 'NURSE', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'RECEPTION']}>
             <ClinicQueuePage />
           </RequireRoles>
         ),

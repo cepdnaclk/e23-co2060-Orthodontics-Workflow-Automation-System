@@ -31,7 +31,7 @@ const cleanupCompletedQueueEntries = async () => {
 };
 
 const buildQueueScope = (user, alias = 'q') => {
-  if (user.role === 'RECEPTION' || user.role === 'ADMIN') {
+  if (user.role === 'RECEPTION' || user.role === 'ADMIN' || user.role === 'NURSE') {
     return { clause: '', params: [] };
   }
 

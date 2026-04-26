@@ -713,10 +713,10 @@ export const apiService = {
       data: {
         payment_date: string;
         amount: number;
-        currency?: string;
+        currency: string;
         payment_method: string;
-        status?: string;
-        reference_number?: string;
+        status: string;
+        reference_number: string;
         notes?: string;
       }
     ) => apiClient.post(API_ENDPOINTS.PAYMENT_RECORDS.CREATE(patientId), data),
