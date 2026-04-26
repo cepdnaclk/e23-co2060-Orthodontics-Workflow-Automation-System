@@ -118,7 +118,7 @@ app.get('/api', (req, res) => {
       users: '/api/users',
       reports: '/api/reports'
     },
-    documentation: 'https://github.com/your-repo/orthoflow-backend'
+    documentation: 'https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System/blob/main/codes/Backend/README.md'
   });
 });
 
