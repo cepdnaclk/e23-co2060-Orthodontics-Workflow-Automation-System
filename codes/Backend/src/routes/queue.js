@@ -10,7 +10,7 @@ const router = express.Router();
 router.use(authenticate);
 
 const queueRoles = ['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
-const queueMutationRoles = ['RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
+const queueMutationRoles = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'RECEPTION'];
 
 // GET /api/queue - Get current queue
 router.get('/',
@@ -26,7 +26,7 @@ router.get('/stats',
 
 // POST /api/queue - Add patient to queue
 router.post('/',
-  authorizeRoles('RECEPTION'),
+  authorizeRoles(...queueMutationRoles),
   validate(schemas.createQueue),
   asyncHandler(queueController.addToQueue)
 );

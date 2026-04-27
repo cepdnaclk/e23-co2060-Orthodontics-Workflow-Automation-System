@@ -4,7 +4,7 @@ import { Clock, Plus, Search, Trash2, X } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED'] as const;
+const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_TREATMENT', 'UNDER_CONSULTATION', 'COMPLETED'] as const;
 
 type QueueStatus = typeof QUEUE_STATUSES[number];
 
@@ -34,20 +34,20 @@ const STATUS_META: Record<QueueStatus, {
   badge: string;
 }> = {
   IN_WAITING_ROOM: {
-    label: 'In Waiting Room',
-    shortLabel: 'Waiting',
+    label: 'In waiting room',
+    shortLabel: 'In waiting room',
     text: 'text-amber-600',
     badge: 'border-amber-200 bg-amber-50 text-amber-700'
   },
   UNDER_CONSULTATION: {
-    label: 'Under Consultation',
-    shortLabel: 'Consultation',
+    label: 'Under consultation',
+    shortLabel: 'Under consultation',
     text: 'text-sky-600',
     badge: 'border-sky-200 bg-sky-50 text-sky-700'
   },
   UNDER_TREATMENT: {
-    label: 'Under Treatment',
-    shortLabel: 'Treatment',
+    label: 'Under treatment',
+    shortLabel: 'Under treatment',
     text: 'text-violet-600',
     badge: 'border-violet-200 bg-violet-50 text-violet-700'
   },
@@ -60,6 +60,7 @@ const STATUS_META: Record<QueueStatus, {
 };
 
 const QUEUE_ROLES = ['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
+const QUEUE_MUTATION_ROLES = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'RECEPTION'];
 
 export function ClinicQueuePage() {
   const { user } = useAuth();
@@ -79,10 +80,11 @@ export function ClinicQueuePage() {
 
   const role = user?.role || '';
   const canViewQueue = QUEUE_ROLES.includes(role);
-  const canAddToQueue = role === 'RECEPTION';
+  const canMutateQueue = QUEUE_MUTATION_ROLES.includes(role);
+  const canAddToQueue = canMutateQueue;
   const canDeleteQueue = role === 'RECEPTION';
-  const canUpdateQueue = ['RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(role);
-  const isReadOnly = role === 'ADMIN' || role === 'NURSE';
+  const canUpdateQueue = canMutateQueue;
+  const isReadOnly = !canMutateQueue;
 
   const loadPatientOptions = async () => {
     if (!canAddToQueue) return;
@@ -198,9 +200,9 @@ export function ClinicQueuePage() {
 
   const statCards = [
     { label: 'Total in Queue', value: stats?.total_in_queue ?? 0, className: 'text-gray-900' },
-    { label: 'Waiting', value: stats?.waiting_count ?? 0, className: STATUS_META.IN_WAITING_ROOM.text },
-    { label: 'Consultation', value: stats?.under_consultation_count ?? 0, className: STATUS_META.UNDER_CONSULTATION.text },
-    { label: 'Treatment', value: stats?.under_treatment_count ?? 0, className: STATUS_META.UNDER_TREATMENT.text },
+    { label: 'In waiting room', value: stats?.waiting_count ?? 0, className: STATUS_META.IN_WAITING_ROOM.text },
+    { label: 'Under treatment', value: stats?.under_treatment_count ?? 0, className: STATUS_META.UNDER_TREATMENT.text },
+    { label: 'Under consultation', value: stats?.under_consultation_count ?? 0, className: STATUS_META.UNDER_CONSULTATION.text },
     { label: 'Completed', value: stats?.completed_count ?? 0, className: STATUS_META.COMPLETED.text },
   ];
 
@@ -220,9 +222,7 @@ export function ClinicQueuePage() {
           <p className="text-gray-500">
             {isReadOnly
               ? 'Read-only global clinic queue.'
-              : role === 'RECEPTION'
-                ? 'Global reception queue for registered patients.'
-                : 'Queue entries for your assigned patients.'}
+              : 'Global clinic queue for registered patients.'}
           </p>
         </div>
         <div className="flex gap-2">
