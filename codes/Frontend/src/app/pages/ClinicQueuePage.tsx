@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Badge, Button, Input, RefreshButton, Table, cn } from '../components/UI';
-import { CheckCircle2, ChevronDown, Clock, Plus, Search, Trash2, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Clock, Plus, Search, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
-const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED'] as const;
+const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_TREATMENT', 'UNDER_CONSULTATION', 'COMPLETED'] as const;
 
 type QueueStatus = typeof QUEUE_STATUSES[number];
 
@@ -37,22 +37,22 @@ const STATUS_META: Record<QueueStatus, {
   selected: string;
 }> = {
   IN_WAITING_ROOM: {
-    label: 'In Waiting Room',
-    shortLabel: 'Waiting',
+    label: 'In waiting room',
+    shortLabel: 'In waiting room',
     text: 'text-amber-600',
     badge: 'border-amber-200 bg-amber-50 text-amber-700',
     selected: 'ring-amber-400 shadow-[0_12px_30px_-18px_rgba(245,158,11,0.9)]'
   },
   UNDER_CONSULTATION: {
-    label: 'Under Consultation',
-    shortLabel: 'Consultation',
+    label: 'Under consultation',
+    shortLabel: 'Under consultation',
     text: 'text-sky-600',
     badge: 'border-sky-200 bg-sky-50 text-sky-700',
     selected: 'ring-sky-400 shadow-[0_12px_30px_-18px_rgba(14,165,233,0.9)]'
   },
   UNDER_TREATMENT: {
-    label: 'Under Treatment',
-    shortLabel: 'Treatment',
+    label: 'Under treatment',
+    shortLabel: 'Under treatment',
     text: 'text-violet-600',
     badge: 'border-violet-200 bg-violet-50 text-violet-700',
     selected: 'ring-violet-400 shadow-[0_12px_30px_-18px_rgba(139,92,246,0.9)]'
@@ -66,7 +66,9 @@ const STATUS_META: Record<QueueStatus, {
   }
 };
 
-const QUEUE_ROLES = ['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
+const QUEUE_VIEW_ROLES = ['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'];
+const QUEUE_WRITE_ROLES = ['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'RECEPTION'];
+const QUEUE_ADD_ROLES = ['RECEPTION'];
 
 export function ClinicQueuePage() {
   const { user } = useAuth();
@@ -83,15 +85,13 @@ export function ClinicQueuePage() {
   const [initialStatus, setInitialStatus] = useState<QueueStatus>('IN_WAITING_ROOM');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [statusMenuOpenId, setStatusMenuOpenId] = useState<number | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<QueueItem | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const role = user?.role || '';
-  const canViewQueue = QUEUE_ROLES.includes(role);
-  const canAddToQueue = role === 'RECEPTION';
-  const canDeleteQueue = role === 'RECEPTION';
-  const canUpdateQueue = ['RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(role);
-  const isReadOnly = role === 'ADMIN' || role === 'NURSE';
+  const canViewQueue = QUEUE_VIEW_ROLES.includes(role);
+  const canUpdateQueue = QUEUE_WRITE_ROLES.includes(role);
+  const canAddToQueue = QUEUE_ADD_ROLES.includes(role);
+  const isReadOnly = !canUpdateQueue;
+  const isLocalQueue = role === 'STUDENT';
 
   const loadPatientOptions = async () => {
     if (!canAddToQueue) return;
@@ -218,21 +218,6 @@ export function ClinicQueuePage() {
     }
   };
 
-  const deleteQueueEntry = async () => {
-    if (!deleteTarget) return;
-    setDeletingId(deleteTarget.id);
-    setError(null);
-    try {
-      await apiService.queue.remove(String(deleteTarget.id));
-      setDeleteTarget(null);
-      await loadQueue();
-    } catch (err: any) {
-      setError(err?.message || 'Failed to delete queue entry');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
   const statusBadge = (status: QueueStatus) => (
     <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold', STATUS_META[status].badge)}>
       {STATUS_META[status].label}
@@ -241,9 +226,9 @@ export function ClinicQueuePage() {
 
   const statCards = [
     { label: 'Total in Queue', value: stats?.total_in_queue ?? 0, className: 'text-gray-900' },
-    { label: 'Waiting', value: stats?.waiting_count ?? 0, className: STATUS_META.IN_WAITING_ROOM.text },
-    { label: 'Consultation', value: stats?.under_consultation_count ?? 0, className: STATUS_META.UNDER_CONSULTATION.text },
-    { label: 'Treatment', value: stats?.under_treatment_count ?? 0, className: STATUS_META.UNDER_TREATMENT.text },
+    { label: 'In waiting room', value: stats?.waiting_count ?? 0, className: STATUS_META.IN_WAITING_ROOM.text },
+    { label: 'Under treatment', value: stats?.under_treatment_count ?? 0, className: STATUS_META.UNDER_TREATMENT.text },
+    { label: 'Under consultation', value: stats?.under_consultation_count ?? 0, className: STATUS_META.UNDER_CONSULTATION.text },
     { label: 'Completed', value: stats?.completed_count ?? 0, className: STATUS_META.COMPLETED.text },
   ];
 
@@ -261,13 +246,10 @@ export function ClinicQueuePage() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Live Clinic Queue</h2>
           <p className="text-gray-500">
-            {isReadOnly
-              ? 'Read-only global clinic queue.'
-              : role === 'RECEPTION'
-                ? 'Global reception queue for registered patients.'
-                : role === 'STUDENT'
-                  ? 'Queue entries for your assigned patients.'
-                  : 'Global clinic queue with status control.'}
+            {isReadOnly && 'Read-only global clinic queue.'}
+            {!isReadOnly && isLocalQueue && 'Queue entries for your assigned patients.'}
+            {!isReadOnly && !isLocalQueue && canAddToQueue && 'Global reception queue with status control and patient queue entry.'}
+            {!isReadOnly && !isLocalQueue && !canAddToQueue && 'Global clinic queue with status control.'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -393,16 +375,6 @@ export function ClinicQueuePage() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                      )}
-                      {canDeleteQueue && (
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => setDeleteTarget(item)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
                       )}
                     </div>
                   </td>
@@ -537,36 +509,6 @@ export function ClinicQueuePage() {
         </div>
       )}
 
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 backdrop-blur-[1px] p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
-            <div className="border-b border-red-100 bg-red-50 px-5 py-4">
-              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-red-600" />
-                Delete Queue Entry
-              </h3>
-            </div>
-            <div className="px-5 py-4 space-y-4">
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
-                Remove <strong>{deleteTarget.patient_name}</strong> from the live clinic queue?
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deletingId !== null}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={deleteQueueEntry}
-                  disabled={deletingId !== null}
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  {deletingId !== null ? 'Deleting...' : 'Delete'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
