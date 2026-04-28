@@ -602,6 +602,48 @@ const ensureAccessControlSchema = async () => {
       INDEX idx_case_tasks_supervisor (supervisor_id, status)
     )
   `);
+
+  const queueStatusColumns = await query(`
+    SELECT COLUMN_TYPE
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'queue'
+      AND COLUMN_NAME = 'status'
+    LIMIT 1
+  `);
+  const queueStatusColumnType = queueStatusColumns[0]?.COLUMN_TYPE || '';
+  if (queueStatusColumnType && !queueStatusColumnType.includes('IN_WAITING_ROOM')) {
+    await query(`
+      ALTER TABLE queue
+      MODIFY COLUMN status ENUM(
+        'WAITING',
+        'PREPARATION',
+        'IN_TREATMENT',
+        'IN_WAITING_ROOM',
+        'UNDER_CONSULTATION',
+        'UNDER_TREATMENT',
+        'COMPLETED'
+      ) DEFAULT 'IN_WAITING_ROOM'
+    `);
+    await query(`
+      UPDATE queue
+      SET status = CASE status
+        WHEN 'WAITING' THEN 'IN_WAITING_ROOM'
+        WHEN 'PREPARATION' THEN 'UNDER_CONSULTATION'
+        WHEN 'IN_TREATMENT' THEN 'UNDER_TREATMENT'
+        ELSE status
+      END
+    `);
+    await query(`
+      ALTER TABLE queue
+      MODIFY COLUMN status ENUM(
+        'IN_WAITING_ROOM',
+        'UNDER_CONSULTATION',
+        'UNDER_TREATMENT',
+        'COMPLETED'
+      ) DEFAULT 'IN_WAITING_ROOM'
+    `);
+  }
 };
 
 // Execute query with error handling

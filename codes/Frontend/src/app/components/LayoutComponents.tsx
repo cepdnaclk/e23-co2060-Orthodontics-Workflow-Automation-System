@@ -30,8 +30,8 @@ export function Sidebar({
   const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
   const mustChangePassword = Boolean(user?.must_change_password);
 
-  const canSeeQueue = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'NURSE', 'RECEPTION'].includes(user?.role || '');
-  const canSeeCases = ['ADMIN', 'ORTHODONTIST', 'STUDENT'].includes(user?.role || '');
+  const canSeeQueue = ['ADMIN', 'NURSE', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'RECEPTION'].includes(user?.role || '');
+  const canSeeCases = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(user?.role || '');
   const canSeeReports = user?.role === 'ADMIN';
   const canSeeMaterials = ['ADMIN', 'NURSE'].includes(user?.role || '');
   const canSeeRequestApprovals = !mustChangePassword && ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user?.role || '');
@@ -55,11 +55,19 @@ export function Sidebar({
       }
     };
 
+    const loadWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadPendingCount();
+      }
+    };
+
     loadPendingCount();
-    const timer = window.setInterval(loadPendingCount, 30000);
+    const timer = window.setInterval(loadWhenVisible, 120000);
+    document.addEventListener('visibilitychange', loadWhenVisible);
     return () => {
       mounted = false;
       window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', loadWhenVisible);
     };
   }, [canSeeRequestApprovals]);
 

@@ -18,6 +18,7 @@ The current repository is organized into a `codes` workspace for the application
 - Inventory management, audit logging, reports, and role-based access controls across the application
 
 ## Getting Started
+- Current one-command local setup/startup: see `codes/QUICK_DEPLOY.md`
 - Backend setup and environment details: see `codes/Backend/README.md`
 - Frontend setup and environment details: see `codes/Frontend/README.md`
 - Project site content and publishing assets: see `docs/README.md`

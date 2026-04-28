@@ -6,8 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "bootstrap-db": "node scripts/bootstrap-database.js",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "ensure-admin": "node scripts/ensure-admin.js",
+    "reset-admin-password": "node scripts/ensure-admin.js --reset-password"
   },
   "keywords": [
     "orthodontics",
@@ -34,6 +37,7 @@
     "mysql2": "^3.6.5",
     "nodemailer": "^8.0.1",
     "open": "^8.4.2",
+    "playwright": "^1.59.1",
     "uuid": "^9.0.1"
   },
   "engines": {

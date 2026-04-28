@@ -230,12 +230,21 @@ const schemas = {
       'number.positive': 'amount must be greater than zero',
       'any.required': 'amount is required'
     }),
-    currency: Joi.string().trim().uppercase().length(3).optional().default('LKR'),
+    currency: Joi.string().trim().uppercase().length(3).required().messages({
+      'string.empty': 'currency is required',
+      'string.length': 'currency must be a 3-letter code',
+      'any.required': 'currency is required'
+    }),
     payment_method: Joi.string().valid('CASH', 'CARD', 'BANK_TRANSFER', 'ONLINE', 'CHEQUE', 'OTHER').required().messages({
       'any.required': 'payment_method is required'
     }),
-    status: Joi.string().valid('PENDING', 'PAID', 'PARTIAL', 'REFUNDED', 'VOID').optional().default('PAID'),
-    reference_number: Joi.string().max(255).allow('').optional(),
+    status: Joi.string().valid('PENDING', 'PAID', 'PARTIAL', 'REFUNDED', 'VOID').required().messages({
+      'any.required': 'status is required'
+    }),
+    reference_number: Joi.string().trim().min(1).max(255).required().messages({
+      'string.empty': 'reference_number is required',
+      'any.required': 'reference_number is required'
+    }),
     notes: Joi.string().max(5000).allow('').optional()
   }),
 
@@ -277,13 +286,14 @@ const schemas = {
     }),
     provider_id: Joi.number().integer().positive().optional(),
     student_id: Joi.number().integer().positive().optional(),
+    status: Joi.string().valid('IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED').optional(),
     priority: Joi.string().valid('LOW', 'NORMAL', 'HIGH', 'URGENT').optional(),
     procedure_type: Joi.string().max(255).optional(),
     notes: Joi.string().max(1000).optional()
   }),
 
   updateQueueStatus: Joi.object({
-    status: Joi.string().valid('WAITING', 'IN_TREATMENT', 'PREPARATION', 'COMPLETED').required().messages({
+    status: Joi.string().valid('IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED').required().messages({
       'any.required': 'Status is required'
     }),
     notes: Joi.string().max(1000).optional()

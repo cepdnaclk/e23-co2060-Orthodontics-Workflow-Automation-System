@@ -76,7 +76,7 @@ On the frontend, the application is structured around route-based pages and reus
 
 Testing has been carried out through iterative functional verification of both backend APIs and frontend workflows. The current repository includes working implementations for authentication, patient management, queue operations, inventory actions, reports, audit-log access, and role-specific navigation and authorization behavior.
 
-In addition to local execution checks, the system has been validated through endpoint health checks, seeded-account login flows, patient and queue operations, administrative workflows, and frontend route coverage for the currently implemented pages. This has helped confirm that the main operational flows work together as an integrated full-stack system.
+In addition to local execution checks, the system has been validated through endpoint health checks, admin-account login flows, patient and queue operations, administrative workflows, and frontend route coverage for the currently implemented pages. This has helped confirm that the main operational flows work together as an integrated full-stack system.
 
 ## Conclusion
 

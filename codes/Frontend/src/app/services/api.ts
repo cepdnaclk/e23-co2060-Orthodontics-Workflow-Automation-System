@@ -63,6 +63,7 @@ class ApiClient {
   private baseURL: string;
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor() {
     this.baseURL = API_CONFIG.BASE_URL;
@@ -87,6 +88,17 @@ class ApiClient {
     this.refreshToken = null;
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+  }
+
+  private shouldAttemptTokenRefresh(endpoint: string): boolean {
+    const authEndpointsWithoutRefresh = new Set<string>([
+      API_ENDPOINTS.AUTH.LOGIN,
+      API_ENDPOINTS.AUTH.GOOGLE,
+      API_ENDPOINTS.AUTH.REFRESH,
+      API_ENDPOINTS.AUTH.LOGOUT,
+    ]);
+
+    return Boolean(this.refreshToken) && !authEndpointsWithoutRefresh.has(endpoint);
   }
 
   // Request helper
@@ -122,7 +134,7 @@ class ApiClient {
       const data = await response.json();
 
       // Handle 401 Unauthorized - try refresh token
-      if (response.status === HTTP_STATUS.UNAUTHORIZED && this.refreshToken) {
+      if (response.status === HTTP_STATUS.UNAUTHORIZED && this.shouldAttemptTokenRefresh(endpoint)) {
         const refreshSuccess = await this.refreshAccessToken();
         if (refreshSuccess) {
           // Retry original request with new token
@@ -135,7 +147,9 @@ class ApiClient {
         } else {
           // Refresh failed, clear tokens and redirect to login
           this.clearTokensFromStorage();
-          window.location.href = '/login';
+          if (window.location.pathname !== '/login') {
+            window.location.assign('/login');
+          }
           throw new Error(ERROR_MESSAGES.UNAUTHORIZED);
         }
       }
@@ -154,6 +168,19 @@ class ApiClient {
 
   // Refresh access token
   private async refreshAccessToken(): Promise<boolean> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = this.performRefreshAccessToken();
+    try {
+      return await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  private async performRefreshAccessToken(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {
         method: 'POST',
@@ -178,6 +205,7 @@ class ApiClient {
     } catch (error) {
       console.error('Token refresh failed:', error);
     }
+    this.clearTokensFromStorage();
     return false;
   }
 
@@ -685,10 +713,10 @@ export const apiService = {
       data: {
         payment_date: string;
         amount: number;
-        currency?: string;
+        currency: string;
         payment_method: string;
-        status?: string;
-        reference_number?: string;
+        status: string;
+        reference_number: string;
         notes?: string;
       }
     ) => apiClient.post(API_ENDPOINTS.PAYMENT_RECORDS.CREATE(patientId), data),

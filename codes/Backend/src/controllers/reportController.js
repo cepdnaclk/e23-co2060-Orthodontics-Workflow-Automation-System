@@ -14,17 +14,17 @@ const getPatientStatusReport = async (req, res) => {
     const { start_date, end_date, group_by = 'status' } = req.query;
 
     let dateFilter = '';
-    let queryParams = [];
+    const queryParams = [];
 
     if (start_date && end_date) {
-      dateFilter = 'WHERE created_at BETWEEN ? AND ?';
-      queryParams = [start_date, end_date];
+      dateFilter = 'AND created_at BETWEEN ? AND ?';
+      queryParams.push(start_date, end_date);
     } else if (start_date) {
-      dateFilter = 'WHERE created_at >= ?';
-      queryParams = [start_date];
+      dateFilter = 'AND created_at >= ?';
+      queryParams.push(start_date);
     } else if (end_date) {
-      dateFilter = 'WHERE created_at <= ?';
-      queryParams = [end_date];
+      dateFilter = 'AND created_at <= ?';
+      queryParams.push(end_date);
     }
 
     let groupByClause;
@@ -63,7 +63,7 @@ const getPatientStatusReport = async (req, res) => {
         COUNT(CASE WHEN nhi_verified = TRUE THEN 1 END) as nhi_verified_count
       FROM patients 
       WHERE deleted_at IS NULL
-        ${dateFilter ? 'AND ' + dateFilter.substring(6) : ''}
+        ${dateFilter}
       GROUP BY ${groupByClause}
       ORDER BY patient_count DESC
     `;
@@ -108,24 +108,31 @@ const getVisitSummaryReport = async (req, res) => {
   try {
     const { start_date, end_date, provider_id, group_by = 'month' } = req.query;
 
-    let dateFilter = '';
-    let queryParams = [];
+    let dateFilterWithAlias = '';
+    let dateFilterWithoutAlias = '';
+    const baseDateParams = [];
 
     if (start_date && end_date) {
-      dateFilter = 'AND visit_date BETWEEN ? AND ?';
-      queryParams = [start_date, end_date];
+      dateFilterWithAlias = 'AND v.visit_date BETWEEN ? AND ?';
+      dateFilterWithoutAlias = 'AND visit_date BETWEEN ? AND ?';
+      baseDateParams.push(start_date, end_date);
     } else if (start_date) {
-      dateFilter = 'AND visit_date >= ?';
-      queryParams = [start_date];
+      dateFilterWithAlias = 'AND v.visit_date >= ?';
+      dateFilterWithoutAlias = 'AND visit_date >= ?';
+      baseDateParams.push(start_date);
     } else if (end_date) {
-      dateFilter = 'AND visit_date <= ?';
-      queryParams = [end_date];
+      dateFilterWithAlias = 'AND v.visit_date <= ?';
+      dateFilterWithoutAlias = 'AND visit_date <= ?';
+      baseDateParams.push(end_date);
     }
 
-    let providerFilter = '';
+    let providerFilterWithAlias = '';
+    let providerFilterWithoutAlias = '';
+    const providerParams = [];
     if (provider_id) {
-      providerFilter = 'AND v.provider_id = ?';
-      queryParams.push(provider_id);
+      providerFilterWithAlias = 'AND v.provider_id = ?';
+      providerFilterWithoutAlias = 'AND provider_id = ?';
+      providerParams.push(provider_id);
     }
 
     let groupByClause;
@@ -165,16 +172,15 @@ const getVisitSummaryReport = async (req, res) => {
       FROM visits v
       LEFT JOIN users u ON v.provider_id = u.id
       WHERE 1=1
-        ${dateFilter}
-        ${providerFilter}
+        ${dateFilterWithAlias}
+        ${providerFilterWithAlias}
       GROUP BY ${groupByClause}
       ORDER BY group_key DESC
     `;
 
-    const reportData = await query(reportQuery, queryParams);
+    const reportData = await query(reportQuery, [...baseDateParams, ...providerParams]);
 
     // Get procedure type statistics
-    const providerFilterNoAlias = provider_id ? 'AND provider_id = ?' : '';
     const procedureStatsQuery = `
       SELECT 
         procedure_type,
@@ -182,8 +188,8 @@ const getVisitSummaryReport = async (req, res) => {
         COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_count
       FROM visits 
       WHERE 1=1
-        ${dateFilter}
-        ${providerFilterNoAlias}
+        ${dateFilterWithoutAlias}
+        ${providerFilterWithoutAlias}
         AND procedure_type IS NOT NULL
         AND procedure_type != ''
       GROUP BY procedure_type
@@ -191,7 +197,7 @@ const getVisitSummaryReport = async (req, res) => {
       LIMIT 20
     `;
 
-    const procedureStats = await query(procedureStatsQuery, queryParams);
+    const procedureStats = await query(procedureStatsQuery, [...baseDateParams, ...providerParams]);
 
     // Get provider workload
     const providerStatsQuery = `
@@ -209,14 +215,15 @@ const getVisitSummaryReport = async (req, res) => {
       FROM visits v
       LEFT JOIN users u ON v.provider_id = u.id
       WHERE 1=1
-        ${dateFilter}
+        ${dateFilterWithAlias}
+        ${providerFilterWithAlias}
         AND v.provider_id IS NOT NULL
       GROUP BY v.provider_id, u.name, u.role
       ORDER BY total_visits DESC
       LIMIT 10
     `;
 
-    const providerStats = await query(providerStatsQuery, queryParams);
+    const providerStats = await query(providerStatsQuery, [...baseDateParams, ...providerParams]);
 
     res.json({
       success: true,

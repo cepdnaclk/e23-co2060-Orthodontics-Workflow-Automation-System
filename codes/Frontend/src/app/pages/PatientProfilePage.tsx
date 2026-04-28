@@ -28,6 +28,19 @@ const canReadPatientMaterials = (role?: string) => ['ADMIN', 'NURSE', 'ORTHODONT
 const canManagePatientMaterials = (role?: string) => ['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(role || '');
 const canDeletePatientMaterials = (role?: string) => role === 'ADMIN';
 
+const normalizePaymentAmountInput = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed || !/^\d+(\.\d{1,2})?$/.test(trimmed)) return null;
+  const amount = Number(trimmed);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return amount.toFixed(2);
+};
+
+type PaymentFormErrors = Partial<Record<
+  'payment_date' | 'amount' | 'currency' | 'status' | 'payment_method' | 'reference_number',
+  string
+>>;
+
 type TabConfig = {
   id: TabId;
   label: string;
@@ -619,6 +632,14 @@ function HistoryTab({
       .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
       .join(' ');
 
+  const sexLabel = (value?: string | null) => {
+    const normalized = String(value || '').trim().toUpperCase();
+    if (normalized === 'M' || normalized === 'MALE') return 'Male';
+    if (normalized === 'F' || normalized === 'FEMALE') return 'Female';
+    if (normalized === 'O' || normalized === 'OTHER') return 'Other';
+    return value || '-';
+  };
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -628,7 +649,7 @@ function HistoryTab({
           <div><span className="font-semibold text-gray-600">Age:</span> {auto?.age ?? '-'}</div>
           <div><span className="font-semibold text-gray-600">Birthday:</span> {auto?.birthday || '-'}</div>
           <div><span className="font-semibold text-gray-600">Address:</span> {auto?.address || '-'}</div>
-          <div><span className="font-semibold text-gray-600">Sex:</span> {auto?.sex || '-'}</div>
+          <div><span className="font-semibold text-gray-600">Sex:</span> {sexLabel(auto?.sex)}</div>
           <div><span className="font-semibold text-gray-600">Telephone No:</span> {auto?.telephone || '-'}</div>
           <div><span className="font-semibold text-gray-600">Province:</span> {auto?.province || '-'}</div>
           <div><span className="font-semibold text-gray-600">Date of Examination:</span> {auto?.date_of_examination || '-'}</div>
@@ -1705,6 +1726,7 @@ function PaymentRecordsTab({
     reference_number: '',
     notes: ''
   });
+  const [formErrors, setFormErrors] = useState<PaymentFormErrors>({});
   const paymentDateRef = useRef<HTMLInputElement | null>(null);
 
   const openDateTimePicker = (input: HTMLInputElement | null) => {
@@ -1719,6 +1741,7 @@ function PaymentRecordsTab({
 
   const resetForm = () => {
     setEditingId(null);
+    setFormErrors({});
     setForm({
       payment_date: '',
       amount: '',
@@ -1739,6 +1762,15 @@ function PaymentRecordsTab({
   const openCreateEditor = () => {
     resetForm();
     setEditorOpen(true);
+  };
+
+  const clearFormError = (field: keyof PaymentFormErrors) => {
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   const loadRecords = async (mode: 'active' | 'trashed' = viewMode) => {
@@ -1773,6 +1805,7 @@ function PaymentRecordsTab({
 
   const startEdit = (record: any) => {
     setEditingId(record.id);
+    setFormErrors({});
     setForm({
       payment_date: toDateTimeLocalValue(record.payment_date),
       amount: String(record.amount ?? ''),
@@ -1786,26 +1819,54 @@ function PaymentRecordsTab({
   };
 
   const saveRecord = async () => {
+    const errors: PaymentFormErrors = {};
+
     if (!form.payment_date) {
-      toast.error('Payment date is required');
+      errors.payment_date = 'Select the payment date and time.';
+    }
+
+    const normalizedAmount = normalizePaymentAmountInput(form.amount);
+    if (!normalizedAmount) {
+      errors.amount = 'Enter a numeric amount greater than 0, using at most two decimal places.';
+    }
+
+    const currency = form.currency.trim().toUpperCase();
+    if (!currency) {
+      errors.currency = 'Enter the currency.';
+    } else if (!/^[A-Z]{3}$/.test(currency)) {
+      errors.currency = 'Use a 3-letter currency code, such as LKR.';
+    }
+
+    if (!form.status) {
+      errors.status = 'Select a payment status.';
+    }
+
+    if (!form.payment_method) {
+      errors.payment_method = 'Select a payment method.';
+    }
+
+    const referenceNumber = form.reference_number.trim();
+    if (!referenceNumber) {
+      errors.reference_number = 'Enter the reference number.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Please correct the highlighted payment fields');
       return;
     }
 
-    const amount = Number(form.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error('Amount must be greater than zero');
-      return;
-    }
-
+    setFormErrors({});
     setSaving(true);
     try {
+      const amount = Number(normalizedAmount);
       const payload = {
         payment_date: form.payment_date,
         amount,
-        currency: form.currency.trim().toUpperCase() || 'LKR',
+        currency,
         payment_method: form.payment_method,
         status: form.status,
-        reference_number: form.reference_number.trim() || undefined,
+        reference_number: referenceNumber,
         notes: form.notes.trim() || undefined
       };
 
@@ -1992,7 +2053,12 @@ function PaymentRecordsTab({
 
                 <div className="flex flex-wrap items-center gap-2">
                   {canCreate && viewMode === 'active' && (
-                    <Button variant="secondary" size="sm" onClick={() => startEdit(record)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 active:bg-blue-200"
+                      onClick={() => startEdit(record)}
+                    >
                       <Pencil className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
@@ -2042,7 +2108,11 @@ function PaymentRecordsTab({
                   ref={paymentDateRef}
                   type="datetime-local"
                   value={form.payment_date}
-                  onChange={(e) => setForm((prev) => ({ ...prev, payment_date: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, payment_date: e.target.value }));
+                    clearFormError('payment_date');
+                  }}
+                  required
                   className="sr-only"
                 />
                 <Button
@@ -2062,40 +2132,66 @@ function PaymentRecordsTab({
                     variant="secondary"
                     size="sm"
                     className="h-9 px-3"
-                    onClick={() => setForm((prev) => ({ ...prev, payment_date: '' }))}
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, payment_date: '' }));
+                      clearFormError('payment_date');
+                    }}
                   >
                     Clear
                   </Button>
                 )}
               </div>
+              {formErrors.payment_date && <p className="text-xs font-medium text-red-600">{formErrors.payment_date}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-600">Amount</label>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                className="h-11 px-4"
+                type="text"
+                inputMode="decimal"
+                className={`h-11 px-4 ${formErrors.amount ? 'border-red-300 focus:ring-red-500' : ''}`}
                 value={form.amount}
-                onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
+                onChange={(e) => {
+                  const value = e.target.value.trim();
+                  if (/^\d*(\.\d{0,2})?$/.test(value)) {
+                    setForm((prev) => ({ ...prev, amount: value }));
+                    clearFormError('amount');
+                  }
+                }}
+                onBlur={() => {
+                  const normalized = normalizePaymentAmountInput(form.amount);
+                  if (normalized) {
+                    setForm((prev) => ({ ...prev, amount: normalized }));
+                  }
+                }}
+                required
               />
+              {formErrors.amount && <p className="text-xs font-medium text-red-600">{formErrors.amount}</p>}
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-600">Currency</label>
                 <Input
                   maxLength={3}
-                  className="h-11 px-4"
+                  className={`h-11 px-4 ${formErrors.currency ? 'border-red-300 focus:ring-red-500' : ''}`}
                   value={form.currency}
-                  onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }));
+                    clearFormError('currency');
+                  }}
+                  required
                 />
+                {formErrors.currency && <p className="text-xs font-medium text-red-600">{formErrors.currency}</p>}
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-600">Status</label>
                 <select
-                  className="h-11 w-full rounded-md border border-gray-200 bg-white px-4 py-2 text-sm"
+                  className={`h-11 w-full rounded-md border bg-white px-4 py-2 text-sm ${formErrors.status ? 'border-red-300 focus:outline-none focus:ring-2 focus:ring-red-500' : 'border-gray-200'}`}
                   value={form.status}
-                  onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, status: e.target.value }));
+                    clearFormError('status');
+                  }}
+                  required
                 >
                   <option value="PAID">Paid</option>
                   <option value="PENDING">Pending</option>
@@ -2103,14 +2199,19 @@ function PaymentRecordsTab({
                   <option value="REFUNDED">Refunded</option>
                   <option value="VOID">Void</option>
                 </select>
+                {formErrors.status && <p className="text-xs font-medium text-red-600">{formErrors.status}</p>}
               </div>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-600">Payment Method</label>
               <select
-                className="h-11 w-full rounded-md border border-gray-200 bg-white px-4 py-2 text-sm"
+                className={`h-11 w-full rounded-md border bg-white px-4 py-2 text-sm ${formErrors.payment_method ? 'border-red-300 focus:outline-none focus:ring-2 focus:ring-red-500' : 'border-gray-200'}`}
                 value={form.payment_method}
-                onChange={(e) => setForm((prev) => ({ ...prev, payment_method: e.target.value }))}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, payment_method: e.target.value }));
+                  clearFormError('payment_method');
+                }}
+                required
               >
                 <option value="CASH">Cash</option>
                 <option value="CARD">Card</option>
@@ -2119,14 +2220,20 @@ function PaymentRecordsTab({
                 <option value="CHEQUE">Cheque</option>
                 <option value="OTHER">Other</option>
               </select>
+              {formErrors.payment_method && <p className="text-xs font-medium text-red-600">{formErrors.payment_method}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-600">Reference Number</label>
               <Input
-                className="h-11 px-4"
+                className={`h-11 px-4 ${formErrors.reference_number ? 'border-red-300 focus:ring-red-500' : ''}`}
                 value={form.reference_number}
-                onChange={(e) => setForm((prev) => ({ ...prev, reference_number: e.target.value }))}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, reference_number: e.target.value }));
+                  clearFormError('reference_number');
+                }}
+                required
               />
+              {formErrors.reference_number && <p className="text-xs font-medium text-red-600">{formErrors.reference_number}</p>}
             </div>
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-600">Payment Notes</label>
