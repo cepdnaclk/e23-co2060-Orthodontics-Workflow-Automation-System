@@ -1,12 +1,13 @@
 # Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+jspm_packages/
 
 # Logs
 logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.out
 
 # Runtime data
@@ -15,89 +16,63 @@ pids
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage
 coverage/
 *.lcov
-
-# nyc test coverage
 .nyc_output
 
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# Optional npm cache directory
+# Optional caches
 .npm
-
-# Optional eslint cache
 .eslintcache
 
-# Output of 'npm pack'
+# Package output
 *.tgz
 
-# Environment files
+# Environment files (IMPORTANT)
 .env
 .env.*
 *.env
-.env.example
-.env.sample
-.env.template
+
+# 👉 Allow example env files (keep these!)
 !.env.example
-!Backend/.env.example
-!Frontend/.env.example
+!codes/Backend/.env.example
+!codes/Frontend/.env.example
 
-# Yarn Integrity file
-.yarn-integrity
+# Build outputs
+dist/
+build/
+.next
+.nuxt
+.vuepress/dist
 
-# parcel-bundler cache (https://parceljs.org/)
+# Parcel cache
 .cache
 .parcel-cache
 
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
+# Serverless
 .serverless
 
-# FuseBox cache
+# Misc caches
 .fusebox/
-
-# DynamoDB Local files
 .dynamodb/
-
-# TernJS port file
 .tern-port
 
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# Uploads directory
+# Uploads (keep placeholder)
 src/uploads/*
 !src/uploads/.gitkeep
 
-# Database files
+# Databases
 *.sqlite
 *.db
 
-# OS generated files
+# OS files
 .DS_Store
 .DS_Store?
 ._*
-.AppleDouble
-.LSOverride
-.Spotlight-V100
-.Trashes
-.fseventsd
-ehthumbs.db
 Thumbs.db
+ehthumbs.db
 
-# IDE files
+# IDE/editor files
 .vscode/
 .idea/
 .history/
@@ -105,15 +80,11 @@ Thumbs.db
 *.swo
 *~
 
-# Build files
-dist/
-build/
-
-# Test files
-test-results/
-coverage/
-
 # Temporary files
 tmp/
 temp/
 *.tmp
+
+# Test outputs
+test-results/
+coverage/
