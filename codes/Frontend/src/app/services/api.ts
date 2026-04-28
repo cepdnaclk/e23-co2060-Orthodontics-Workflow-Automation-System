@@ -773,24 +773,84 @@ export const apiService = {
 
   // Cases
   cases: {
-    getList: (params?: { page?: number; limit?: number; status?: string }) => {
+    getList: (params?: { page?: number; limit?: number; status?: string; search?: string; student_id?: string | number; supervisor_id?: string | number }) => {
+      const query = new URLSearchParams();
+      if (params?.page) query.append('page', params.page.toString());
+      if (params?.limit) query.append('limit', params.limit.toString());
+      if (params?.status) query.append('status', params.status);
+      if (params?.search) query.append('search', params.search);
+      if (params?.student_id !== undefined && params?.student_id !== '') query.append('student_id', String(params.student_id));
+      if (params?.supervisor_id !== undefined && params?.supervisor_id !== '') query.append('supervisor_id', String(params.supervisor_id));
+      
+      const queryString = query.toString();
+      return apiClient.get<PaginatedResponse<any>>(`${API_ENDPOINTS.CASES.LIST}${queryString ? `?${queryString}` : ''}`);
+    },
+
+    getById: (id: string) =>
+      apiClient.get<any>(API_ENDPOINTS.CASES.DETAIL(id)),
+    
+    getStudentCases: (studentId: string, params?: { page?: number; limit?: number; status?: string }) => {
       const query = new URLSearchParams();
       if (params?.page) query.append('page', params.page.toString());
       if (params?.limit) query.append('limit', params.limit.toString());
       if (params?.status) query.append('status', params.status);
       
       const queryString = query.toString();
-      return apiClient.get<PaginatedResponse<any>>(`${API_ENDPOINTS.CASES.LIST}${queryString ? `?${queryString}` : ''}`);
-    },
-    
-    getStudentCases: (studentId: string, params?: { page?: number; limit?: number }) => {
-      const query = new URLSearchParams();
-      if (params?.page) query.append('page', params.page.toString());
-      if (params?.limit) query.append('limit', params.limit.toString());
-      
-      const queryString = query.toString();
       return apiClient.get<PaginatedResponse<any>>(`${API_ENDPOINTS.CASES.STUDENT_CASES(studentId)}${queryString ? `?${queryString}` : ''}`);
     },
+
+    addProgress: (
+      id: string,
+      data: {
+        progress_notes: string;
+        progress_percentage?: number;
+        requirements_met?: Record<string, any>;
+        submit_for_review?: boolean;
+      }
+    ) => apiClient.post<any>(API_ENDPOINTS.CASES.PROGRESS(id), data),
+
+    addReview: (
+      id: string,
+      data: {
+        supervisor_feedback?: string;
+        evaluation?: string;
+        recommendations?: string;
+        status?: string;
+      }
+    ) => apiClient.post<any>(API_ENDPOINTS.CASES.REVIEWS(id), data),
+
+    assignTask: (
+      id: string,
+      data: {
+        title: string;
+        description?: string;
+        deadline_at?: string;
+      }
+    ) => apiClient.post<any>(API_ENDPOINTS.CASES.TASKS(id), data),
+
+    updateTask: (
+      id: string,
+      taskId: string,
+      data: {
+        status: string;
+        completion_notes?: string;
+      }
+    ) => apiClient.put<any>(API_ENDPOINTS.CASES.TASK_DETAIL(id, taskId), data),
+
+    reviewTask: (
+      id: string,
+      taskId: string,
+      data: {
+        review_notes?: string;
+        status?: string;
+      }
+    ) => apiClient.post<any>(API_ENDPOINTS.CASES.TASK_REVIEW(id, taskId), data),
+
+    deleteTask: (id: string, taskId: string) =>
+      apiClient.delete<any>(API_ENDPOINTS.CASES.TASK_DELETE(id, taskId)),
+
+    deleteCase: (id: string) =>
+      apiClient.delete<any>(API_ENDPOINTS.CASES.DELETE(id)),
 
     getStats: () =>
       apiClient.get<any>(API_ENDPOINTS.CASES.STATS),

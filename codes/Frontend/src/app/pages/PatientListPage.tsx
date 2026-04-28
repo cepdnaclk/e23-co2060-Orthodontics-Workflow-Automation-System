@@ -1088,13 +1088,13 @@ export function PatientListPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">Registration Date &amp; Time</label>
-                  <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
-                    <input
+                  <div className="flex items-center gap-2">
+                    <Input
                       ref={createRegistrationDateRef}
                       type="datetime-local"
                       value={createForm.registration_date}
                       onChange={(e) => setCreateForm((s) => ({ ...s, registration_date: e.target.value }))}
-                      className="sr-only"
+                      className="flex-1"
                     />
                     <Button
                       type="button"
@@ -1102,19 +1102,16 @@ export function PatientListPage() {
                       size="icon"
                       className="h-10 w-10 border-gray-200"
                       onClick={() => openDateTimePicker(createRegistrationDateRef.current)}
-                      title={createForm.registration_date || 'Select registration date and time'}
+                      title="Open registration date and time picker"
                     >
                       <Calendar className="w-4 h-4" />
                     </Button>
-                    <span className="text-sm text-gray-600">
-                      {createForm.registration_date ? createForm.registration_date.replace('T', ' ') : 'Select registration date and time'}
-                    </span>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">Birth Date</label>
-                  <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
-                    <input
+                  <div className="flex items-center gap-2">
+                    <Input
                       ref={createBirthDateRef}
                       type="date"
                       value={createForm.date_of_birth}
@@ -1128,7 +1125,7 @@ export function PatientListPage() {
                           };
                         })
                       }
-                      className="sr-only"
+                      className="flex-1"
                       required
                     />
                     <Button
@@ -1137,13 +1134,10 @@ export function PatientListPage() {
                       size="icon"
                       className="h-10 w-10 border-gray-200"
                       onClick={() => openDateTimePicker(createBirthDateRef.current)}
-                      title={createForm.date_of_birth || 'Select birth date'}
+                      title="Open birth date picker"
                     >
                       <Calendar className="w-4 h-4" />
                     </Button>
-                    <span className="text-sm text-gray-600">
-                      {createForm.date_of_birth || 'Select birth date'}
-                    </span>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -1257,13 +1251,13 @@ export function PatientListPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">Registration Date &amp; Time</label>
-                  <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
-                    <input
+                  <div className="flex items-center gap-2">
+                    <Input
                       ref={editRegistrationDateRef}
                       type="datetime-local"
                       value={editForm.registration_date}
                       onChange={(e) => setEditForm((s) => ({ ...s, registration_date: e.target.value }))}
-                      className="sr-only"
+                      className="flex-1"
                     />
                     <Button
                       type="button"
@@ -1271,19 +1265,16 @@ export function PatientListPage() {
                       size="icon"
                       className="h-10 w-10 border-gray-200"
                       onClick={() => openDateTimePicker(editRegistrationDateRef.current)}
-                      title={editForm.registration_date || 'Select registration date and time'}
+                      title="Open registration date and time picker"
                     >
                       <Calendar className="w-4 h-4" />
                     </Button>
-                    <span className="text-sm text-gray-600">
-                      {editForm.registration_date ? editForm.registration_date.replace('T', ' ') : 'Select registration date and time'}
-                    </span>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-600">Birth Date</label>
-                  <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
-                    <input
+                  <div className="flex items-center gap-2">
+                    <Input
                       ref={editBirthDateRef}
                       type="date"
                       value={editForm.date_of_birth}
@@ -1297,7 +1288,7 @@ export function PatientListPage() {
                           };
                         })
                       }
-                      className="sr-only"
+                      className="flex-1"
                     />
                     <Button
                       type="button"
@@ -1305,13 +1296,10 @@ export function PatientListPage() {
                       size="icon"
                       className="h-10 w-10 border-gray-200"
                       onClick={() => openDateTimePicker(editBirthDateRef.current)}
-                      title={editForm.date_of_birth || 'Select birth date'}
+                      title="Open birth date picker"
                     >
                       <Calendar className="w-4 h-4" />
                     </Button>
-                    <span className="text-sm text-gray-600">
-                      {editForm.date_of_birth || 'Select birth date'}
-                    </span>
                   </div>
                 </div>
                 <div className="space-y-1">

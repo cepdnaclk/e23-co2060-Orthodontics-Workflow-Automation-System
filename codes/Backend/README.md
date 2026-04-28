@@ -89,7 +89,21 @@ npm run seed
 
 Current seed script creates:
 
-- `admin@orthoflow.edu` / `Jk@xditc4`
+- `admin@example.com` / `AdminPass123`
+- `reception@example.com` / `AdminPass123`
+- `orthodontist@example.com` / `AdminPass123`
+- `orthodontist2@example.com` / `AdminPass123`
+- `student@example.com` / `AdminPass123`
+- `student2@example.com` / `AdminPass123`
+
+These defaults can be overridden with:
+
+- `SEED_ADMIN_*`
+- `SEED_RECEPTION_*`
+- `SEED_ORTHODONTIST_*`
+- `SEED_ORTHODONTIST2_*`
+- `SEED_STUDENT_*`
+- `SEED_STUDENT2_*`
 
 ## Notes
 

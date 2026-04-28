@@ -31,7 +31,7 @@ export function Sidebar({
   const mustChangePassword = Boolean(user?.must_change_password);
 
   const canSeeQueue = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'NURSE', 'RECEPTION'].includes(user?.role || '');
-  const canSeeCases = ['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(user?.role || '');
+  const canSeeCases = ['ADMIN', 'ORTHODONTIST', 'STUDENT'].includes(user?.role || '');
   const canSeeReports = user?.role === 'ADMIN';
   const canSeeMaterials = ['ADMIN', 'NURSE'].includes(user?.role || '');
   const canSeeRequestApprovals = !mustChangePassword && ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user?.role || '');

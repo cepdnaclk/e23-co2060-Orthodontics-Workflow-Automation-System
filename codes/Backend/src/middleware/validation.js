@@ -301,15 +301,55 @@ const schemas = {
       'any.required': 'Supervisor ID is required'
     }),
     progress_notes: Joi.string().max(2000).optional(),
+    progress_percentage: Joi.number().integer().min(0).max(100).optional(),
     requirements_met: Joi.object().optional()
   }),
 
   updateCase: Joi.object({
     status: Joi.string().valid('ASSIGNED', 'PENDING_VERIFICATION', 'VERIFIED', 'REJECTED').optional(),
     progress_notes: Joi.string().max(2000).optional(),
+    progress_percentage: Joi.number().integer().min(0).max(100).optional(),
     requirements_met: Joi.object().optional(),
-    supervisor_feedback: Joi.string().max(2000).optional()
+    supervisor_feedback: Joi.string().max(2000).optional(),
+    latest_evaluation: Joi.string().max(2000).optional(),
+    latest_recommendation: Joi.string().max(2000).optional()
   }).min(1),
+
+  createCaseProgress: Joi.object({
+    progress_notes: Joi.string().min(1).max(5000).required().messages({
+      'any.required': 'progress_notes is required'
+    }),
+    progress_percentage: Joi.number().integer().min(0).max(100).optional(),
+    requirements_met: Joi.object().optional(),
+    submit_for_review: Joi.boolean().optional()
+  }),
+
+  createCaseReview: Joi.object({
+    supervisor_feedback: Joi.string().max(5000).allow('').optional(),
+    evaluation: Joi.string().max(5000).allow('').optional(),
+    recommendations: Joi.string().max(5000).allow('').optional(),
+    status: Joi.string().valid('ASSIGNED', 'PENDING_VERIFICATION', 'VERIFIED', 'REJECTED').optional()
+  }).or('supervisor_feedback', 'evaluation', 'recommendations', 'status'),
+
+  createCaseTask: Joi.object({
+    title: Joi.string().min(1).max(255).required().messages({
+      'any.required': 'title is required'
+    }),
+    description: Joi.string().max(5000).allow('').optional(),
+    deadline_at: Joi.date().optional().allow(null)
+  }),
+
+  updateCaseTask: Joi.object({
+    status: Joi.string().valid('ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'REVIEWED').required().messages({
+      'any.required': 'status is required'
+    }),
+    completion_notes: Joi.string().max(5000).allow('').optional()
+  }),
+
+  reviewCaseTask: Joi.object({
+    review_notes: Joi.string().max(5000).allow('').optional(),
+    status: Joi.string().valid('IN_PROGRESS', 'COMPLETED', 'REVIEWED').optional()
+  }).or('review_notes', 'status'),
 
   // Inventory schemas
   createInventoryItem: Joi.object({
