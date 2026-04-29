@@ -465,9 +465,6 @@ export function StudentCasesPage() {
               {isSupervisor && (
                 <Card className="p-6">
                   <h4 className="text-lg font-semibold text-slate-900">Assign New Task</h4>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Assign a concrete task to the student, such as recording medical history, and set a deadline if needed.
-                  </p>
                   <div className="mt-5 space-y-4">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Task title</label>
@@ -501,9 +498,6 @@ export function StudentCasesPage() {
 
               <Card className="p-6">
                 <h4 className="text-lg font-semibold text-slate-900">Task Progress</h4>
-                <p className="mt-1 text-sm text-slate-500">
-                  Supervisors can see whether each assigned task is pending, in progress, completed, or reviewed.
-                </p>
                 <div className="mt-5 space-y-4">
                   {activeTasks.length === 0 && (
                     <div className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
@@ -681,9 +675,6 @@ export function StudentCasesPage() {
 
               <Card className="p-6">
                 <h4 className="text-lg font-semibold text-slate-900">Chronological Logbook</h4>
-                <p className="mt-1 text-sm text-slate-500">
-                  Task assignments, student updates, and supervisor reviews are recorded here in order.
-                </p>
                 <div className="mt-5 space-y-4">
                   {detail?.logbook?.length ? detail.logbook.map((entry) => (
                     <div key={entry.id} className="rounded-xl border border-slate-200 p-4">
