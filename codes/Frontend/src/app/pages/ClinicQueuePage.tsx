@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Badge, Button, Input, RefreshButton, Table, cn } from '../components/UI';
-import { Clock, Plus, Search, Trash2, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Clock, Plus, Search, Trash2, X } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED'] as const;
 
@@ -32,30 +34,35 @@ const STATUS_META: Record<QueueStatus, {
   shortLabel: string;
   text: string;
   badge: string;
+  selected: string;
 }> = {
   IN_WAITING_ROOM: {
     label: 'In Waiting Room',
     shortLabel: 'Waiting',
     text: 'text-amber-600',
-    badge: 'border-amber-200 bg-amber-50 text-amber-700'
+    badge: 'border-amber-200 bg-amber-50 text-amber-700',
+    selected: 'ring-amber-400 shadow-[0_12px_30px_-18px_rgba(245,158,11,0.9)]'
   },
   UNDER_CONSULTATION: {
     label: 'Under Consultation',
     shortLabel: 'Consultation',
     text: 'text-sky-600',
-    badge: 'border-sky-200 bg-sky-50 text-sky-700'
+    badge: 'border-sky-200 bg-sky-50 text-sky-700',
+    selected: 'ring-sky-400 shadow-[0_12px_30px_-18px_rgba(14,165,233,0.9)]'
   },
   UNDER_TREATMENT: {
     label: 'Under Treatment',
     shortLabel: 'Treatment',
     text: 'text-violet-600',
-    badge: 'border-violet-200 bg-violet-50 text-violet-700'
+    badge: 'border-violet-200 bg-violet-50 text-violet-700',
+    selected: 'ring-violet-400 shadow-[0_12px_30px_-18px_rgba(139,92,246,0.9)]'
   },
   COMPLETED: {
     label: 'Completed',
     shortLabel: 'Completed',
     text: 'text-emerald-600',
-    badge: 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    selected: 'ring-emerald-400 shadow-[0_12px_30px_-18px_rgba(16,185,129,0.9)]'
   }
 };
 
@@ -68,12 +75,14 @@ export function ClinicQueuePage() {
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [queueAlert, setQueueAlert] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [initialStatus, setInitialStatus] = useState<QueueStatus>('IN_WAITING_ROOM');
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [statusMenuOpenId, setStatusMenuOpenId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QueueItem | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -100,6 +109,7 @@ export function ClinicQueuePage() {
     if (!canViewQueue) return;
     setLoading(true);
     setError(null);
+    setQueueAlert(null);
     try {
       const queueRes = await apiService.queue.getList();
       setItems(queueRes.data?.queue || []);
@@ -144,29 +154,62 @@ export function ClinicQueuePage() {
 
     setAdding(true);
     setError(null);
+    setQueueAlert(null);
     try {
       await apiService.queue.addToQueue({
         patient_id: Number(selectedPatientId),
         status: initialStatus
       });
       setAddOpen(false);
-      setPatientSearch('');
-      setSelectedPatientId('');
-      setInitialStatus('IN_WAITING_ROOM');
+      resetAddQueueForm();
       await loadQueue();
     } catch (err: any) {
-      setError(err?.message || 'Failed to add patient to queue');
+      const message = err?.message || 'Failed to add patient to queue';
+      if (String(message).toLowerCase().includes('already in queue')) {
+        setAddOpen(false);
+        resetAddQueueForm();
+        setQueueAlert(message);
+        toast.error(message);
+      } else {
+        setError(message);
+      }
     } finally {
       setAdding(false);
     }
   };
 
+  const resetAddQueueForm = () => {
+    setPatientSearch('');
+    setSelectedPatientId('');
+    setInitialStatus('IN_WAITING_ROOM');
+  };
+
+  const openAddQueueModal = () => {
+    resetAddQueueForm();
+    setQueueAlert(null);
+    setAddOpen(true);
+  };
+
+  const closeAddQueueModal = () => {
+    if (adding) return;
+    setAddOpen(false);
+    resetAddQueueForm();
+  };
+
+  const clearSelectedPatient = () => {
+    resetAddQueueForm();
+  };
+
   const updateStatus = async (item: QueueItem, status: QueueStatus) => {
-    if (item.status === status) return;
+    if (item.status === status) {
+      setStatusMenuOpenId(null);
+      return;
+    }
     setUpdatingId(item.id);
     setError(null);
     try {
       await apiService.queue.updateStatus(String(item.id), { status });
+      setStatusMenuOpenId(null);
       await loadQueue();
     } catch (err: any) {
       setError(err?.message || 'Failed to update queue status');
@@ -222,13 +265,15 @@ export function ClinicQueuePage() {
               ? 'Read-only global clinic queue.'
               : role === 'RECEPTION'
                 ? 'Global reception queue for registered patients.'
-                : 'Queue entries for your assigned patients.'}
+                : role === 'STUDENT'
+                  ? 'Queue entries for your assigned patients.'
+                  : 'Global clinic queue with status control.'}
           </p>
         </div>
         <div className="flex gap-2">
           <RefreshButton onClick={loadQueue} loading={loading} />
           {canAddToQueue && (
-            <Button className="flex items-center gap-2" onClick={() => setAddOpen(true)}>
+            <Button className="flex items-center gap-2" onClick={openAddQueueModal}>
               <Plus className="w-4 h-4" />
               Add to Queue
             </Button>
@@ -237,6 +282,11 @@ export function ClinicQueuePage() {
       </div>
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      {queueAlert && (
+        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm font-bold text-red-700 shadow-sm">
+          {queueAlert}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {statCards.map((card) => (
@@ -256,7 +306,7 @@ export function ClinicQueuePage() {
             </p>
           </div>
         </div>
-        <Table tableClassName="w-full min-w-max text-sm text-left border-collapse">
+        <Table tableClassName="w-full min-w-[1120px] text-sm text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-6 py-4 font-semibold text-gray-600 whitespace-nowrap">Patient</th>
@@ -279,25 +329,70 @@ export function ClinicQueuePage() {
                   {item.assigned_clinical_staff || 'Unassigned'}
                 </td>
                 <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
-                  {item.wait_time_minutes ?? '-'} min
+                  {item.wait_time_minutes != null ? Math.max(0, item.wait_time_minutes) : '-'} min
                 </td>
                 <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
                   {String(item.arrival_time || '').slice(0, 16).replace('T', ' ')}
                 </td>
                 {!isReadOnly && (
                   <td className="px-6 py-4 align-middle text-center whitespace-nowrap">
-                    <div className="flex flex-wrap items-center justify-center gap-2">
+                    <div className="flex items-center justify-end gap-2">
                       {canUpdateQueue && (
-                        <select
-                          className="h-9 min-w-[12rem] rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-800"
-                          value={item.status}
-                          onChange={(e) => updateStatus(item, e.target.value as QueueStatus)}
-                          disabled={updatingId === item.id}
-                        >
-                          {QUEUE_STATUSES.map((status) => (
-                            <option key={status} value={status}>{STATUS_META[status].label}</option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <DropdownMenu
+                            open={statusMenuOpenId === item.id}
+                            onOpenChange={(open) => setStatusMenuOpenId(open ? item.id : null)}
+                          >
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className={cn(
+                                  'flex h-10 min-w-[13.5rem] items-center justify-between gap-3 rounded-lg border px-3 text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 active:translate-y-0 active:scale-[0.99]',
+                                  STATUS_META[item.status].badge,
+                                  STATUS_META[item.status].selected,
+                                  updatingId === item.id && 'cursor-wait opacity-70'
+                                )}
+                                disabled={updatingId === item.id}
+                              >
+                                <span>{STATUS_META[item.status].label}</span>
+                                <ChevronDown
+                                  className={cn(
+                                    'h-4 w-4 transition-transform',
+                                    statusMenuOpenId === item.id && 'rotate-180'
+                                  )}
+                                />
+                              </button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent className="w-72 p-2">
+                              <div className="px-2 pb-2 pt-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                Change queue status
+                              </div>
+                              <div className="space-y-1.5">
+                                {QUEUE_STATUSES.map((status) => {
+                                  const selected = item.status === status;
+                                  return (
+                                    <DropdownMenuItem
+                                      key={status}
+                                      className={cn(
+                                        'flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-all active:translate-y-0 active:scale-[0.99]',
+                                        STATUS_META[status].badge,
+                                        selected
+                                          ? cn('ring-2 ring-offset-1', STATUS_META[status].selected)
+                                          : 'opacity-85 hover:opacity-100'
+                                      )}
+                                      onSelect={() => updateStatus(item, status)}
+                                      disabled={updatingId === item.id}
+                                    >
+                                      <span>{STATUS_META[status].label}</span>
+                                      {selected && <CheckCircle2 className="h-4 w-4 shrink-0" />}
+                                    </DropdownMenuItem>
+                                  );
+                                })}
+                              </div>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       )}
                       {canDeleteQueue && (
                         <Button
@@ -323,8 +418,8 @@ export function ClinicQueuePage() {
 
       {addOpen && canAddToQueue && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 backdrop-blur-[1px] p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-blue-50 px-5 py-4">
+          <div className="flex w-full max-w-4xl max-h-[92vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="shrink-0 flex items-center justify-between border-b border-slate-200 bg-blue-50 px-6 py-5">
               <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-blue-600" />
                 Add Patient to Queue
@@ -333,15 +428,16 @@ export function ClinicQueuePage() {
                 variant="secondary"
                 size="icon"
                 className="h-9 w-9 border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                onClick={() => setAddOpen(false)}
+                onClick={closeAddQueueModal}
                 disabled={adding}
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <form className="space-y-5 px-5 py-4" onSubmit={addToQueue}>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-600">Search Registered Patient</label>
+            <form className="flex min-h-0 flex-1 flex-col" onSubmit={addToQueue}>
+              <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-7 py-6">
+              <div className="space-y-4">
+                <label className="mb-2 block text-xs font-semibold text-gray-600">Search Registered Patient</label>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
@@ -351,7 +447,7 @@ export function ClinicQueuePage() {
                     onChange={(e) => setPatientSearch(e.target.value)}
                   />
                 </div>
-                <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-100">
+                <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-100 p-1">
                   {filteredPatients.length === 0 ? (
                     <div className="p-4 text-sm text-gray-400">No registered patients found.</div>
                   ) : filteredPatients.map((p) => {
@@ -362,45 +458,74 @@ export function ClinicQueuePage() {
                         type="button"
                         onClick={() => setSelectedPatientId(String(p.id))}
                         className={cn(
-                          'flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors',
-                          selected ? 'bg-blue-50 text-blue-700' : 'bg-white text-gray-700 hover:bg-gray-50'
+                          'flex w-full items-center justify-between gap-3 rounded-md border px-4 py-4 text-left text-sm transition-all',
+                          selected
+                            ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
+                            : 'border-transparent bg-white text-gray-700 hover:border-blue-100 hover:bg-blue-50/50'
                         )}
                       >
-                        <span className="font-semibold">{p.first_name} {p.last_name}</span>
-                        <span className="text-xs">MRN: {p.patient_code}</span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{p.first_name} {p.last_name}</span>
+                          <span className="text-xs">MRN: {p.patient_code}</span>
+                        </span>
+                        {selected && <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-600" />}
                       </button>
                     );
                   })}
                 </div>
                 {selectedPatient && (
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-                    Selected: <strong>{selectedPatient.first_name} {selectedPatient.last_name}</strong> ({selectedPatient.patient_code})
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-800">
+                    <div className="min-w-0">
+                      <span className="block text-xs font-semibold uppercase text-blue-600">Selected Patient</span>
+                      <span className="block truncate">
+                        <strong>{selectedPatient.first_name} {selectedPatient.last_name}</strong> ({selectedPatient.patient_code})
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="h-9 border-blue-200 bg-white px-3 text-blue-700 hover:bg-blue-100"
+                      onClick={clearSelectedPatient}
+                      disabled={adding}
+                    >
+                      <X className="mr-1 h-3.5 w-3.5" />
+                      Clear
+                    </Button>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-600">Current Queue Status</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {QUEUE_STATUSES.map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      onClick={() => setInitialStatus(status)}
-                      className={cn(
-                        'rounded-lg border px-3 py-3 text-left text-sm font-semibold transition-all',
-                        STATUS_META[status].badge,
-                        initialStatus === status ? 'ring-2 ring-blue-500 ring-offset-1' : 'opacity-80 hover:opacity-100'
-                      )}
-                    >
-                      {STATUS_META[status].label}
-                    </button>
-                  ))}
+              {selectedPatient && (
+                <div className="space-y-4">
+                    <label className="mb-2 block text-xs font-semibold text-gray-600">Current Queue Status</label>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {QUEUE_STATUSES.map((status) => {
+                      const selected = initialStatus === status;
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => setInitialStatus(status)}
+                          className={cn(
+                            'flex min-h-[4.25rem] items-center rounded-lg border px-4 py-3 text-left text-sm font-semibold transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.99]',
+                            STATUS_META[status].badge,
+                            selected
+                              ? cn('scale-[1.015] ring-2 ring-offset-2 opacity-100', STATUS_META[status].selected)
+                              : 'opacity-80 hover:opacity-100'
+                          )}
+                        >
+                          <span>{STATUS_META[status].label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+              )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="secondary" onClick={() => setAddOpen(false)} disabled={adding}>
+              <div className="shrink-0 flex justify-end gap-2 border-t border-slate-100 bg-white px-7 py-5">
+                <Button type="button" variant="secondary" onClick={closeAddQueueModal} disabled={adding}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={adding || !selectedPatientId}>

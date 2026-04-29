@@ -9,7 +9,8 @@ const {
 const { logAuditEvent } = require('../middleware/errorHandler');
 
 const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED'];
-const CLINICAL_QUEUE_ROLES = new Set(['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT']);
+const GLOBAL_QUEUE_ROLES = new Set(['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON']);
+const LOCAL_QUEUE_ROLES = new Set(['STUDENT']);
 
 const normalizeQueueStatus = (status) => {
   const normalized = String(status || '').toUpperCase();
@@ -31,11 +32,11 @@ const cleanupCompletedQueueEntries = async () => {
 };
 
 const buildQueueScope = (user, alias = 'q') => {
-  if (user.role === 'RECEPTION' || user.role === 'ADMIN' || user.role === 'NURSE') {
+  if (GLOBAL_QUEUE_ROLES.has(user.role)) {
     return { clause: '', params: [] };
   }
 
-  if (CLINICAL_QUEUE_ROLES.has(user.role)) {
+  if (LOCAL_QUEUE_ROLES.has(user.role)) {
     return {
       clause: `
         AND EXISTS (
@@ -158,15 +159,19 @@ const getQueue = async (req, res) => {
     const queue = await query(queueQuery, queryParams);
 
     // Calculate wait times
-    const queueWithWaitTimes = queue.map(item => ({
-      ...item,
-      wait_time_minutes: item.start_time ? 
+    const queueWithWaitTimes = queue.map(item => {
+      const waitMinutes = item.start_time ?
         Math.floor((new Date(item.start_time) - new Date(item.arrival_time)) / 60000) :
-        Math.floor((new Date() - new Date(item.arrival_time)) / 60000),
-      treatment_duration_minutes: item.start_time && item.completion_time ?
-        Math.floor((new Date(item.completion_time) - new Date(item.start_time)) / 60000) :
-        null
-    }));
+        Math.floor((new Date() - new Date(item.arrival_time)) / 60000);
+
+      return {
+        ...item,
+        wait_time_minutes: Math.max(0, waitMinutes),
+        treatment_duration_minutes: item.start_time && item.completion_time ?
+          Math.floor((new Date(item.completion_time) - new Date(item.start_time)) / 60000) :
+          null
+      };
+    });
 
     // Get queue statistics
     const statsQuery = `
