@@ -108,6 +108,8 @@ Admin setup is controlled by `SEED_ADMIN_*` values in `Backend/.env`.
 - `SEED_ADMIN_PASSWORD` is used when provided
 - when `SEED_ADMIN_PASSWORD` is blank, a temporary password is generated, printed in the terminal, and emailed if SMTP/simulation settings allow it
 
+Older local setups may still use seeded development users such as `admin@example.com`, `reception@example.com`, `orthodontist@example.com`, and `student@example.com`, but current setup should be driven by the `SEED_ADMIN_*` environment values instead of relying on fixed shared credentials.
+
 ## Notes
 
 Playwright is listed as a backend dependency for visual dental-chart PDF exports. After dependency install, Chromium can be installed when full browser-backed rendering is needed:

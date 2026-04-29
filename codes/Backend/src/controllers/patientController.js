@@ -7,6 +7,7 @@ const {
 } = require('../config/database');
 const { logAuditEvent } = require('../middleware/errorHandler');
 const { hasPermission, OBJECT_TYPES, PERMISSIONS } = require('../middleware/accessControl');
+const { ensureStudentCaseForAssignment } = require('../services/studentCaseService');
 
 const ASSIGNMENT_SCOPED_ROLES = new Set(['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT']);
 const APPROVAL_REQUIRED_ASSIGNMENT_ROLES = new Set(['ORTHODONTIST', 'DENTAL_SURGEON']);
@@ -1003,7 +1004,9 @@ const getPatientById = async (req, res) => {
     const canReadDocuments = hasPermission(req.user.role, OBJECT_TYPES.PATIENT_RADIOGRAPHS, PERMISSIONS.READ);
     const canReadNotes = hasPermission(req.user.role, OBJECT_TYPES.PATIENT_NOTES, PERMISSIONS.READ);
 
-    const [visits, documents, clinicalNotes, cases, assignments] = await Promise.all([
+      const canReadPrivateCases = req.user.role === 'ADMIN';
+
+      const [visits, documents, clinicalNotes, cases, assignments] = await Promise.all([
       query(`
         SELECT v.*, u.name as provider_name 
         FROM visits v 
@@ -1030,16 +1033,18 @@ const getPatientById = async (req, res) => {
             ORDER BY cn.created_at DESC
           `, [id])
         : Promise.resolve([]),
-      query(`
-        SELECT c.*, 
-               s.name as student_name, 
-               sup.name as supervisor_name 
-        FROM cases c 
-        LEFT JOIN users s ON c.student_id = s.id 
-        LEFT JOIN users sup ON c.supervisor_id = sup.id 
-        WHERE c.patient_id = ? 
-        ORDER BY c.created_at DESC
-      `, [id]),
+        canReadPrivateCases
+          ? query(`
+              SELECT c.*,
+                     s.name as student_name,
+                     sup.name as supervisor_name
+              FROM cases c
+              LEFT JOIN users s ON c.student_id = s.id
+              LEFT JOIN users sup ON c.supervisor_id = sup.id
+              WHERE c.patient_id = ?
+              ORDER BY c.created_at DESC
+            `, [id])
+          : Promise.resolve([]),
       query(
         `SELECT pa.id, pa.patient_id, pa.user_id, pa.assignment_role, pa.active, pa.created_at,
                 u.name AS user_name, u.email AS user_email
@@ -1666,6 +1671,14 @@ const assignPatientMember = async (req, res) => {
         });
 
         created.push({ id: assignmentId, user_id, assignment_role });
+        if (assignment_role === 'STUDENT' && req.user.role === 'ORTHODONTIST') {
+          await ensureStudentCaseForAssignment({
+            patientId: Number(patientId),
+            studentId: user_id,
+            supervisorId: Number(req.user.id),
+            assignedBy: Number(req.user.id)
+          });
+        }
         await logAuditEvent(req.user.id, 'ASSIGN', 'PATIENT_ASSIGNMENT', assignmentId, null, {
           patient_id: Number(patientId),
           user_id,
@@ -1887,6 +1900,26 @@ const respondToAssignmentRequest = async (req, res) => {
             assigned_by: Number(request.requested_by),
             active: true
           });
+          if (String(request.target_role).toUpperCase() === 'STUDENT') {
+            const supervisors = await query(
+              `SELECT user_id
+               FROM patient_assignments
+               WHERE patient_id = ?
+                 AND assignment_role = 'ORTHODONTIST'
+                 AND active = TRUE
+               ORDER BY created_at DESC`,
+              [request.patient_id]
+            );
+
+            for (const supervisor of supervisors) {
+              await ensureStudentCaseForAssignment({
+                patientId: Number(request.patient_id),
+                studentId: Number(request.target_user_id),
+                supervisorId: Number(supervisor.user_id),
+                assignedBy: Number(request.requested_by)
+              });
+            }
+          }
           await logAuditEvent(req.user.id, 'ASSIGN_APPROVED', 'PATIENT_ASSIGNMENT', assignmentId, null, {
             request_id: Number(request.id),
             patient_id: Number(request.patient_id),
