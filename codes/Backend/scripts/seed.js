@@ -3,85 +3,19 @@ const { query } = require('../src/config/database');
 const { generateTemporaryPassword } = require('../src/utils/password');
 require('dotenv').config();
 
-const buildSeedUser = ({ name, email, role, department, password, seededAt }) => {
-  const normalizedPassword = String(password || '').trim() || generateTemporaryPassword();
-  const usesProvidedPassword = Boolean(String(password || '').trim());
-
-  return {
-    record: {
-      name: String(name || '').trim(),
-      email: String(email || '').trim(),
-      password_hash: bcrypt.hashSync(normalizedPassword, 12),
-      role,
-      department: String(department || '').trim() || null,
-      status: 'ACTIVE',
-      must_change_password: !usesProvidedPassword,
-      password_changed_at: usesProvidedPassword ? seededAt : null,
-      last_login: null,
-      last_activity_at: null
-    },
-    password: normalizedPassword,
-    usesProvidedPassword
-  };
-};
-
 async function seedDatabase() {
   try {
-    console.log('Starting database seeding...');
+    console.log('🌱 Starting database seeding...');
 
     const seededAt = new Date();
-    const seedUsers = [
-      buildSeedUser({
-        name: process.env.SEED_ADMIN_NAME || 'System Administrator',
-        email: process.env.SEED_ADMIN_EMAIL || 'admin@example.com',
-        role: 'ADMIN',
-        department: process.env.SEED_ADMIN_DEPARTMENT || 'Orthodontics',
-        password: process.env.SEED_ADMIN_PASSWORD || 'AdminPass123',
-        seededAt
-      }),
-      buildSeedUser({
-        name: process.env.SEED_RECEPTION_NAME || 'Reception Test User',
-        email: process.env.SEED_RECEPTION_EMAIL || 'reception@example.com',
-        role: 'RECEPTION',
-        department: process.env.SEED_RECEPTION_DEPARTMENT || 'Front Desk',
-        password: process.env.SEED_RECEPTION_PASSWORD || 'AdminPass123',
-        seededAt
-      }),
-      buildSeedUser({
-        name: process.env.SEED_ORTHODONTIST_NAME || 'Orthodontist Test User',
-        email: process.env.SEED_ORTHODONTIST_EMAIL || 'orthodontist@example.com',
-        role: 'ORTHODONTIST',
-        department: process.env.SEED_ORTHODONTIST_DEPARTMENT || 'Orthodontics',
-        password: process.env.SEED_ORTHODONTIST_PASSWORD || 'AdminPass123',
-        seededAt
-      }),
-      buildSeedUser({
-        name: process.env.SEED_ORTHODONTIST2_NAME || 'Orthodontist Test User 2',
-        email: process.env.SEED_ORTHODONTIST2_EMAIL || 'orthodontist2@example.com',
-        role: 'ORTHODONTIST',
-        department: process.env.SEED_ORTHODONTIST2_DEPARTMENT || 'Orthodontics',
-        password: process.env.SEED_ORTHODONTIST2_PASSWORD || 'AdminPass123',
-        seededAt
-      }),
-      buildSeedUser({
-        name: process.env.SEED_STUDENT_NAME || 'Student Test User',
-        email: process.env.SEED_STUDENT_EMAIL || 'student@example.com',
-        role: 'STUDENT',
-        department: process.env.SEED_STUDENT_DEPARTMENT || 'Orthodontics',
-        password: process.env.SEED_STUDENT_PASSWORD || 'AdminPass123',
-        seededAt
-      }),
-      buildSeedUser({
-        name: process.env.SEED_STUDENT2_NAME || 'Student Test User 2',
-        email: process.env.SEED_STUDENT2_EMAIL || 'student2@example.com',
-        role: 'STUDENT',
-        department: process.env.SEED_STUDENT2_DEPARTMENT || 'Orthodontics',
-        password: process.env.SEED_STUDENT2_PASSWORD || 'AdminPass123',
-        seededAt
-      })
-    ];
+    const adminPassword = (process.env.SEED_ADMIN_PASSWORD || '').trim() || generateTemporaryPassword();
+    const usesProvidedPassword = Boolean((process.env.SEED_ADMIN_PASSWORD || '').trim());
+    const adminEmail = (process.env.SEED_ADMIN_EMAIL || 'admin@orthoflow.edu').trim();
+    const adminName = (process.env.SEED_ADMIN_NAME || 'System Administrator').trim();
+    const adminDepartment = (process.env.SEED_ADMIN_DEPARTMENT || 'Orthodontics').trim();
 
-    console.log('Clearing existing data...');
+    // Clear existing data in reverse dependency order
+    console.log('🧹 Clearing existing data...');
     await query('SET FOREIGN_KEY_CHECKS = 0');
     await query('DELETE FROM audit_logs');
     await query('DELETE FROM refresh_tokens');
@@ -98,7 +32,6 @@ async function seedDatabase() {
     await query('DELETE FROM patient_histories');
     await query('DELETE FROM queue');
     await query('DELETE FROM visits');
-    await query('DELETE FROM case_progress_logs');
     await query('DELETE FROM cases');
     await query('DELETE FROM inventory_items');
     await query('DELETE FROM patients');
@@ -106,7 +39,7 @@ async function seedDatabase() {
     await query('DELETE FROM users');
     await query('SET FOREIGN_KEY_CHECKS = 1');
 
-    console.log('Creating default system settings...');
+    console.log('⚙️ Creating default system settings...');
     await query(
       `INSERT INTO system_settings (setting_key, setting_value, description) VALUES
         (?, ?, ?),
@@ -123,45 +56,47 @@ async function seedDatabase() {
       ]
     );
 
-    console.log('Creating users...');
-    for (const seedUser of seedUsers) {
-      await query('INSERT INTO users SET ?', seedUser.record);
-    }
-
-    console.log('Database seeding completed successfully.');
-    console.log('\nLogin Credentials:');
-    console.log('--------------------------------------------------------------');
-    console.log('Email                     Role           Password');
-    console.log('--------------------------------------------------------------');
-    for (const seedUser of seedUsers) {
-      console.log(
-        `${seedUser.record.email.padEnd(25)} ${seedUser.record.role.padEnd(14)} ${seedUser.password}`
-      );
-    }
-    console.log('--------------------------------------------------------------');
-
-    const temporaryUsers = seedUsers.filter((seedUser) => !seedUser.usesProvidedPassword);
-    if (temporaryUsers.length > 0) {
-      console.log('\nUsers with temporary passwords:');
-      for (const seedUser of temporaryUsers) {
-        console.log(`- ${seedUser.record.email} (${seedUser.record.role})`);
+    // Insert users
+    console.log('👥 Creating users...');
+    const users = [
+      {
+        name: adminName,
+        email: adminEmail,
+        password_hash: bcrypt.hashSync(adminPassword, 12),
+        role: 'ADMIN',
+        department: adminDepartment || null,
+        status: 'ACTIVE',
+        must_change_password: !usesProvidedPassword,
+        password_changed_at: usesProvidedPassword ? seededAt : null,
+        last_login: null,
+        last_activity_at: null
       }
+    ];
+
+    for (const user of users) {
+      await query('INSERT INTO users SET ?', user);
     }
 
-    console.log('\nOptional seed env vars:');
-    console.log('- SEED_ADMIN_EMAIL, SEED_ADMIN_NAME, SEED_ADMIN_DEPARTMENT, SEED_ADMIN_PASSWORD');
-    console.log('- SEED_RECEPTION_EMAIL, SEED_RECEPTION_NAME, SEED_RECEPTION_DEPARTMENT, SEED_RECEPTION_PASSWORD');
-    console.log('- SEED_ORTHODONTIST_EMAIL, SEED_ORTHODONTIST_NAME, SEED_ORTHODONTIST_DEPARTMENT, SEED_ORTHODONTIST_PASSWORD');
-    console.log('- SEED_ORTHODONTIST2_EMAIL, SEED_ORTHODONTIST2_NAME, SEED_ORTHODONTIST2_DEPARTMENT, SEED_ORTHODONTIST2_PASSWORD');
-    console.log('- SEED_STUDENT_EMAIL, SEED_STUDENT_NAME, SEED_STUDENT_DEPARTMENT, SEED_STUDENT_PASSWORD');
-    console.log('- SEED_STUDENT2_EMAIL, SEED_STUDENT2_NAME, SEED_STUDENT2_DEPARTMENT, SEED_STUDENT2_PASSWORD');
-    console.log('\nReady to start the application.');
+    console.log('✅ Database seeding completed successfully!');
+    console.log('\n👤 Login Credentials:');
+    console.log('┌──────────────────────────────────────────────────────────────┐');
+    console.log('│ Email                       │ Role  │ Password Mode         │');
+    console.log('├──────────────────────────────────────────────────────────────┤');
+    console.log(`│ ${adminEmail.padEnd(27)} │ ADMIN │ ${(usesProvidedPassword ? 'configured via .env' : 'generated temporary').padEnd(21)} │`);
+    console.log('└──────────────────────────────────────────────────────────────┘');
+    console.log(`Password: ${adminPassword}`);
+    if (!usesProvidedPassword) {
+      console.log('This is a temporary password. The seeded admin must change it after the first login.');
+    }
+    console.log('\nOptional seed env vars: SEED_ADMIN_EMAIL, SEED_ADMIN_NAME, SEED_ADMIN_DEPARTMENT, SEED_ADMIN_PASSWORD');
+    console.log('\n🎯 Ready to start the application!');
   } catch (error) {
-    console.error('Seeding failed:', error.message);
+    console.error('❌ Seeding failed:', error.message);
     process.exit(1);
   }
 }
 
+// Run seeding if this file is executed directly
 if (require.main === module) {
   seedDatabase();
 }
