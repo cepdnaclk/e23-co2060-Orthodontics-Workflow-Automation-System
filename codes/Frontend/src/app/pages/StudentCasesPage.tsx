@@ -4,6 +4,19 @@ import { Badge, Button, Card, Input, RefreshButton, cn } from '../components/UI'
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { toast } from 'sonner';
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  FolderOpen,
+  GraduationCap,
+  Plus,
+  Search,
+  Trash2,
+  X
+} from 'lucide-react';
 
 type CaseStatus = 'ASSIGNED' | 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
 type TaskStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'REVIEWED';
@@ -68,6 +81,16 @@ type TaskReviewDraft = {
   review_notes: string;
 };
 
+type ConfirmationDialogState = {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmText: string;
+  tone: 'warning' | 'danger';
+  processing: boolean;
+  onConfirm: null | (() => Promise<void>);
+};
+
 const formatDateTime = (value?: string | null) => {
   if (!value) return '-';
   const date = new Date(value);
@@ -114,6 +137,15 @@ export function StudentCasesPage() {
   });
   const [taskUpdates, setTaskUpdates] = useState<Record<number, TaskUpdateDraft>>({});
   const [taskReviews, setTaskReviews] = useState<Record<number, TaskReviewDraft>>({});
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmationDialogState>({
+    open: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    tone: 'warning',
+    processing: false,
+    onConfirm: null
+  });
 
   const isStudent = user?.role === 'STUDENT';
   const isSupervisor = user?.role === 'ORTHODONTIST';
@@ -200,12 +232,40 @@ export function StudentCasesPage() {
   const reviewedTasks = tasks.filter((task) => task.status === 'REVIEWED');
 
   const statsCards = useMemo(() => ([
-    { label: 'Cases', value: stats?.total_cases ?? 0, tone: 'text-slate-900' },
-    { label: 'Assigned Tasks', value: stats?.total_tasks ?? 0, tone: 'text-blue-600' },
-    { label: 'Completed Tasks', value: stats?.completed_tasks ?? 0, tone: 'text-emerald-600' },
-    { label: 'Pending Tasks', value: stats?.pending_tasks ?? 0, tone: 'text-amber-600' },
-    { label: 'Overdue Tasks', value: stats?.overdue_tasks ?? 0, tone: 'text-red-600' }
+    { label: 'Cases', value: stats?.total_cases ?? 0, tone: 'text-slate-900', icon: ClipboardList },
+    { label: 'Assigned Tasks', value: stats?.total_tasks ?? 0, tone: 'text-blue-600', icon: GraduationCap },
+    { label: 'Completed Tasks', value: stats?.completed_tasks ?? 0, tone: 'text-emerald-600', icon: CheckCircle2 },
+    { label: 'Pending Tasks', value: stats?.pending_tasks ?? 0, tone: 'text-amber-600', icon: Clock },
+    { label: 'Overdue Tasks', value: stats?.overdue_tasks ?? 0, tone: 'text-red-600', icon: AlertTriangle }
   ]), [stats]);
+
+  const openConfirmDialog = (config: Omit<ConfirmationDialogState, 'open' | 'processing'>) => {
+    setConfirmDialog({
+      ...config,
+      open: true,
+      processing: false
+    });
+  };
+
+  const closeConfirmDialog = () => {
+    if (confirmDialog.processing) return;
+    setConfirmDialog((prev) => ({
+      ...prev,
+      open: false,
+      onConfirm: null
+    }));
+  };
+
+  const runConfirmDialog = async () => {
+    if (!confirmDialog.onConfirm || confirmDialog.processing) return;
+    setConfirmDialog((prev) => ({ ...prev, processing: true }));
+    try {
+      await confirmDialog.onConfirm();
+      setConfirmDialog((prev) => ({ ...prev, open: false, processing: false, onConfirm: null }));
+    } catch {
+      setConfirmDialog((prev) => ({ ...prev, processing: false }));
+    }
+  };
 
   const assignTask = async () => {
     if (!selectedCase) return;
@@ -290,58 +350,73 @@ export function StudentCasesPage() {
 
   const deleteTask = async (taskId: number, title: string) => {
     if (!selectedCase) return;
-    if (!window.confirm(`Delete the task "${title}"? This keeps a logbook entry but removes the task from the active list.`)) {
-      return;
-    }
-
-    setSavingAssignment(true);
-    try {
-      await apiService.cases.deleteTask(String(selectedCase.id), String(taskId));
-      toast.success('Task deleted');
-      await loadCases();
-      await loadCaseDetail(selectedCase.id);
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to delete task');
-    } finally {
-      setSavingAssignment(false);
-    }
+    const caseId = selectedCase.id;
+    openConfirmDialog({
+      title: 'Delete Task',
+      message: `Delete the task "${title}"? This keeps a logbook entry but removes the task from the active list.`,
+      confirmText: 'Delete Task',
+      tone: 'danger',
+      onConfirm: async () => {
+        setSavingAssignment(true);
+        try {
+          await apiService.cases.deleteTask(String(caseId), String(taskId));
+          toast.success('Task deleted');
+          await loadCases();
+          await loadCaseDetail(caseId);
+        } catch (err: any) {
+          toast.error(err?.message || 'Failed to delete task');
+          throw err;
+        } finally {
+          setSavingAssignment(false);
+        }
+      }
+    });
   };
 
   const deleteCase = async (caseRow: CaseListRow) => {
-    if (!window.confirm(`Remove ${caseRow.patient_name} from Accessible Cases? This removes the case from the supervisor and student task bars.`)) {
-      return;
-    }
-
-    setSavingAssignment(true);
-    try {
-      await apiService.cases.deleteCase(String(caseRow.id));
-      toast.success('Case removed from Accessible Cases');
-      await loadCases();
-      if (selectedCaseId === caseRow.id) {
-        setDetail(null);
+    openConfirmDialog({
+      title: 'Remove Accessible Case',
+      message: `Remove ${caseRow.patient_name} from Accessible Cases? This removes the case from the supervisor and student task bars.`,
+      confirmText: 'Remove Case',
+      tone: 'danger',
+      onConfirm: async () => {
+        setSavingAssignment(true);
+        try {
+          await apiService.cases.deleteCase(String(caseRow.id));
+          toast.success('Case removed from Accessible Cases');
+          await loadCases();
+          if (selectedCaseId === caseRow.id) {
+            setDetail(null);
+          }
+        } catch (err: any) {
+          toast.error(err?.message || 'Failed to remove case');
+          throw err;
+        } finally {
+          setSavingAssignment(false);
+        }
       }
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to remove case');
-    } finally {
-      setSavingAssignment(false);
-    }
+    });
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Student Case Management</h2>
+          <p className="text-gray-500">Track assigned cases, task progress, supervisor reviews, and case logbook activity.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            placeholder="Search patient or student"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-64"
-          />
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search patient or student"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 sm:w-72"
+            />
+          </div>
           <select
-            className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
+            className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -359,17 +434,21 @@ export function StudentCasesPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         {statsCards.map((item) => (
-          <Card key={item.label} className="p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">{item.label}</p>
-            <p className={cn('mt-2 text-2xl font-bold', item.tone)}>{item.value}</p>
+          <Card key={item.label} className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-slate-500">{item.label}</p>
+              <item.icon className={cn('h-5 w-5', item.tone)} />
+            </div>
+            <p className={cn('mt-2 text-3xl font-extrabold', item.tone)}>{item.value}</p>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <Card className="overflow-hidden">
-          <div className="border-b border-gray-100 px-4 py-3">
-            <h3 className="font-semibold text-slate-900">Accessible Cases</h3>
+          <div className="border-b border-gray-100 bg-gray-50 px-4 py-3">
+            <h3 className="font-bold text-slate-900">Accessible Cases</h3>
+            <p className="text-xs text-slate-500">{rows.length} {rows.length === 1 ? 'case' : 'cases'} visible.</p>
           </div>
           <div className="max-h-[70vh] overflow-y-auto">
             {loadingList && <div className="p-4 text-sm text-slate-500">Loading cases...</div>}
@@ -378,8 +457,8 @@ export function StudentCasesPage() {
               <div
                 key={row.id}
                 className={cn(
-                  'border-b border-gray-100 px-4 py-4 transition-colors hover:bg-slate-50',
-                  selectedCaseId === row.id && 'bg-blue-50'
+                  'border-b border-gray-100 px-4 py-4 transition-colors hover:bg-blue-50/40',
+                  selectedCaseId === row.id && 'bg-blue-50 ring-1 ring-inset ring-blue-100'
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -396,10 +475,12 @@ export function StudentCasesPage() {
                     {isSupervisor && (
                       <Button
                         variant="danger"
+                        size="sm"
                         onClick={() => deleteCase(row)}
                         disabled={savingAssignment}
                       >
-                        Delete
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        Remove
                       </Button>
                     )}
                   </div>
@@ -448,6 +529,7 @@ export function StudentCasesPage() {
                     </p>
                   </div>
                   <Button variant="secondary" onClick={() => navigate(`/patients/${selectedCase.patient_id}`)}>
+                    <FolderOpen className="mr-2 h-4 w-4" />
                     Open Patient
                   </Button>
                 </div>
@@ -464,7 +546,10 @@ export function StudentCasesPage() {
 
               {isSupervisor && (
                 <Card className="p-6">
-                  <h4 className="text-lg font-semibold text-slate-900">Assign New Task</h4>
+                  <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                    <Plus className="h-5 w-5 text-blue-600" />
+                    Assign New Task
+                  </h4>
                   <div className="mt-5 space-y-4">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Task title</label>
@@ -489,6 +574,7 @@ export function StudentCasesPage() {
                     </div>
                     <div className="flex justify-end">
                       <Button onClick={assignTask} disabled={savingAssignment}>
+                        <Plus className="mr-2 h-4 w-4" />
                         {savingAssignment ? 'Assigning...' : 'Assign Task'}
                       </Button>
                     </div>
@@ -497,7 +583,10 @@ export function StudentCasesPage() {
               )}
 
               <Card className="p-6">
-                <h4 className="text-lg font-semibold text-slate-900">Task Progress</h4>
+                <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                  <ClipboardList className="h-5 w-5 text-blue-600" />
+                  Task Progress
+                </h4>
                 <div className="mt-5 space-y-4">
                   {activeTasks.length === 0 && (
                     <div className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
@@ -528,6 +617,7 @@ export function StudentCasesPage() {
                               onClick={() => deleteTask(task.id, task.title)}
                               disabled={savingAssignment}
                             >
+                              <Trash2 className="mr-2 h-4 w-4" />
                               Delete Task
                             </Button>
                           </div>
@@ -637,7 +727,10 @@ export function StudentCasesPage() {
 
               {reviewedTasks.length > 0 && (
                 <Card className="p-6">
-                  <h4 className="text-lg font-semibold text-slate-900">Reviewed Tasks</h4>
+                  <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    Reviewed Tasks
+                  </h4>
                   <p className="mt-1 text-sm text-slate-500">
                     Accepted tasks are kept here as part of the case record after they leave the active student and supervisor task bars.
                   </p>
@@ -674,7 +767,10 @@ export function StudentCasesPage() {
               )}
 
               <Card className="p-6">
-                <h4 className="text-lg font-semibold text-slate-900">Chronological Logbook</h4>
+                <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                  <BookOpen className="h-5 w-5 text-slate-600" />
+                  Chronological Logbook
+                </h4>
                 <div className="mt-5 space-y-4">
                   {detail?.logbook?.length ? detail.logbook.map((entry) => (
                     <div key={entry.id} className="rounded-xl border border-slate-200 p-4">
@@ -709,6 +805,42 @@ export function StudentCasesPage() {
           )}
         </div>
       </div>
+
+      {confirmDialog.open && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/45 px-4 py-6 backdrop-blur-[1px]">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-red-100 bg-red-50 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                {confirmDialog.title}
+              </h3>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-9 w-9 border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                onClick={closeConfirmDialog}
+                disabled={confirmDialog.processing}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
+                {confirmDialog.message}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={closeConfirmDialog} disabled={confirmDialog.processing}>
+                  Cancel
+                </Button>
+                <Button variant="danger" onClick={runConfirmDialog} disabled={confirmDialog.processing}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {confirmDialog.processing ? 'Processing...' : confirmDialog.confirmText}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
