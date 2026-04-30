@@ -612,27 +612,13 @@ const ensureAccessControlSchema = async () => {
     LIMIT 1
   `);
   const queueStatusColumnType = queueStatusColumns[0]?.COLUMN_TYPE || '';
-  const queueStatusNeedsMigration = queueStatusColumnType && (
-    !queueStatusColumnType.includes('IN_WAITING_ROOM') ||
-    queueStatusColumnType.includes('WAITING') ||
-    queueStatusColumnType.includes('PREPARATION') ||
-    queueStatusColumnType.includes('IN_TREATMENT') ||
-    queueStatusColumnType.includes('In waiting room') ||
-    queueStatusColumnType.includes('under consultation') ||
-    queueStatusColumnType.includes('under treatment') ||
-    queueStatusColumnType.includes('Treatments are done / Done')
-  );
-  if (queueStatusNeedsMigration) {
+  if (queueStatusColumnType && !queueStatusColumnType.includes('IN_WAITING_ROOM')) {
     await query(`
       ALTER TABLE queue
       MODIFY COLUMN status ENUM(
         'WAITING',
         'PREPARATION',
         'IN_TREATMENT',
-        'In waiting room',
-        'under consultation',
-        'under treatment',
-        'Treatments are done / Done',
         'IN_WAITING_ROOM',
         'UNDER_CONSULTATION',
         'UNDER_TREATMENT',
@@ -643,12 +629,8 @@ const ensureAccessControlSchema = async () => {
       UPDATE queue
       SET status = CASE status
         WHEN 'WAITING' THEN 'IN_WAITING_ROOM'
-        WHEN 'In waiting room' THEN 'IN_WAITING_ROOM'
         WHEN 'PREPARATION' THEN 'UNDER_CONSULTATION'
-        WHEN 'under consultation' THEN 'UNDER_CONSULTATION'
         WHEN 'IN_TREATMENT' THEN 'UNDER_TREATMENT'
-        WHEN 'under treatment' THEN 'UNDER_TREATMENT'
-        WHEN 'Treatments are done / Done' THEN 'COMPLETED'
         ELSE status
       END
     `);
