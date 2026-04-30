@@ -23,6 +23,10 @@ export function LoginPage() {
   const toothLogoRef = useRef<HTMLDivElement | null>(null);
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
+  if (!authLoading && user) {
+    return <Navigate to="/" replace />;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -158,10 +162,6 @@ export function LoginPage() {
       cancelled = true;
     };
   }, [googleClientId, loginWithGoogle, navigate]);
-
-  if (!authLoading && user) {
-    return <Navigate to="/" replace />;
-  }
 
   const ToothLogo = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
