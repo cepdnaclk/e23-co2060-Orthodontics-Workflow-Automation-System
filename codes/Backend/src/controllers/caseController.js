@@ -34,6 +34,7 @@ const hydrateCaseRow = (row) => {
     reviewed_tasks: Number(row.reviewed_tasks || 0),
     pending_tasks: Number(row.pending_tasks || 0),
     overdue_tasks: Number(row.overdue_tasks || 0),
+    student_assignment_active: row.student_assignment_active === undefined ? true : Boolean(Number(row.student_assignment_active)),
     patient_age: row.patient_dob
       ? Math.floor((new Date() - new Date(row.patient_dob)) / (365.25 * 24 * 60 * 60 * 1000))
       : row.patient_age
@@ -41,6 +42,17 @@ const hydrateCaseRow = (row) => {
 };
 
 const buildScopedCaseFilter = (user) => {
+  const activeStudentAssignmentClause = `
+    EXISTS (
+      SELECT 1
+      FROM patient_assignments pa_student
+      WHERE pa_student.patient_id = c.patient_id
+        AND pa_student.user_id = c.student_id
+        AND pa_student.assignment_role = 'STUDENT'
+        AND pa_student.active = TRUE
+    )
+  `;
+
   if (user.role === 'ADMIN') {
     return { clause: '1=1', params: [] };
   }
@@ -65,6 +77,8 @@ const buildScopedCaseFilter = (user) => {
   if (user.role === 'STUDENT') {
     return {
       clause: `
+        ${activeStudentAssignmentClause}
+        AND
         c.student_id = ?
         AND EXISTS (
           SELECT 1
@@ -84,7 +98,17 @@ const buildScopedCaseFilter = (user) => {
 
 const loadCaseOrThrow = async (req, res) => {
   const rows = await query(
-    `SELECT c.*, ${getTaskSummarySelect()}
+    `SELECT
+       c.*,
+       EXISTS (
+         SELECT 1
+         FROM patient_assignments pa_student
+         WHERE pa_student.patient_id = c.patient_id
+           AND pa_student.user_id = c.student_id
+           AND pa_student.assignment_role = 'STUDENT'
+           AND pa_student.active = TRUE
+       ) AS student_assignment_active,
+       ${getTaskSummarySelect()}
      FROM cases c
      ${getTaskSummaryJoin()}
      WHERE c.id = ?
@@ -197,6 +221,14 @@ const getCases = async (req, res) => {
     const rows = await query(
       `SELECT
          c.*,
+         EXISTS (
+           SELECT 1
+           FROM patient_assignments pa_student
+           WHERE pa_student.patient_id = c.patient_id
+             AND pa_student.user_id = c.student_id
+             AND pa_student.assignment_role = 'STUDENT'
+             AND pa_student.active = TRUE
+         ) AS student_assignment_active,
          ${getTaskSummarySelect()},
          p.patient_code,
          CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
@@ -645,12 +677,19 @@ const deleteCase = async (req, res) => {
     if (!caseRow) return;
     if (!requireSupervisorRole(req, res, caseRow)) return;
 
+    if (caseRow.student_assignment_active) {
+      return res.status(400).json({
+        success: false,
+        message: 'Remove the student from the patient care team before deleting this student case.'
+      });
+    }
+
     await remove('cases', { id: Number(caseRow.id) }, false);
     await logAuditEvent(req.user.id, 'DELETE', 'CASE', Number(caseRow.id), caseRow, null);
 
     res.json({
       success: true,
-      message: 'Case removed from accessible cases successfully'
+      message: 'Removed student case deleted successfully'
     });
   } catch (error) {
     console.error('Delete case error:', error);

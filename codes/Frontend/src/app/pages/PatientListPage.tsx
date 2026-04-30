@@ -1376,7 +1376,7 @@ export function PatientListPage() {
 
       {assignOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <div className="w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h3 className="text-xl font-bold text-gray-900">
                 {canOrthoAssignCareTeam ? 'Assign Care Team' : 'Assign Care Team'}
@@ -1392,8 +1392,8 @@ export function PatientListPage() {
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <form className="max-h-[calc(90vh-81px)] overflow-y-auto px-6 py-5 space-y-4" onSubmit={handleAssign}>
-              <div className="rounded-xl border border-purple-100 bg-purple-50/60 p-5 space-y-4">
+            <form className="max-h-[calc(92vh-81px)] overflow-y-auto px-8 py-8 space-y-6" onSubmit={handleAssign}>
+              <div className="min-h-[20rem] rounded-xl border border-purple-100 bg-purple-50/60 p-8 space-y-6">
                 {canOrthoAssignCareTeam && (
                   <>
                     <MultiSelectDropdown

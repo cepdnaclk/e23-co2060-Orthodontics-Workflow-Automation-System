@@ -20,6 +20,7 @@ import {
 
 type CaseStatus = 'ASSIGNED' | 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
 type TaskStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'REVIEWED';
+type LogbookOrder = 'latest' | 'oldest';
 
 type CaseListRow = {
   id: number;
@@ -37,6 +38,7 @@ type CaseListRow = {
   reviewed_tasks: number;
   pending_tasks: number;
   overdue_tasks: number;
+  student_assignment_active?: boolean;
   updated_at: string;
   last_task_update_at?: string | null;
 };
@@ -122,6 +124,7 @@ export function StudentCasesPage() {
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null);
   const [detail, setDetail] = useState<CaseDetailResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
+  const [logbookOrder, setLogbookOrder] = useState<LogbookOrder>('latest');
   const [search, setSearch] = useState('');
   const [loadingList, setLoadingList] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -227,9 +230,23 @@ export function StudentCasesPage() {
   }, [selectedCaseId]);
 
   const selectedCase = detail?.case || rows.find((row) => row.id === selectedCaseId) || null;
+  const selectedCaseStudentRemoved = Boolean(selectedCase && selectedCase.student_assignment_active === false);
   const tasks = detail?.tasks || [];
   const activeTasks = tasks.filter((task) => task.status !== 'REVIEWED');
   const reviewedTasks = tasks.filter((task) => task.status === 'REVIEWED');
+  const sortedLogbookEntries = useMemo(() => {
+    const entries = [...(detail?.logbook || [])];
+    entries.sort((a, b) => {
+      const firstTime = new Date(a.created_at).getTime();
+      const secondTime = new Date(b.created_at).getTime();
+      const first = Number.isFinite(firstTime) ? firstTime : 0;
+      const second = Number.isFinite(secondTime) ? secondTime : 0;
+      const timeOrder = logbookOrder === 'latest' ? second - first : first - second;
+      if (timeOrder !== 0) return timeOrder;
+      return logbookOrder === 'latest' ? b.id - a.id : a.id - b.id;
+    });
+    return entries;
+  }, [detail?.logbook, logbookOrder]);
 
   const statsCards = useMemo(() => ([
     { label: 'Cases', value: stats?.total_cases ?? 0, tone: 'text-slate-900', icon: ClipboardList },
@@ -403,7 +420,6 @@ export function StudentCasesPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Student Case Management</h2>
-          <p className="text-gray-500">Track assigned cases, task progress, supervisor reviews, and case logbook activity.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative">
@@ -444,71 +460,76 @@ export function StudentCasesPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <div className="space-y-6">
         <Card className="overflow-hidden">
           <div className="border-b border-gray-100 bg-gray-50 px-4 py-3">
             <h3 className="font-bold text-slate-900">Accessible Cases</h3>
             <p className="text-xs text-slate-500">{rows.length} {rows.length === 1 ? 'case' : 'cases'} visible.</p>
           </div>
-          <div className="max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">
             {loadingList && <div className="p-4 text-sm text-slate-500">Loading cases...</div>}
             {!loadingList && rows.length === 0 && <div className="p-4 text-sm text-slate-500">No student cases found.</div>}
-            {rows.map((row) => (
-              <div
-                key={row.id}
-                className={cn(
-                  'border-b border-gray-100 px-4 py-4 transition-colors hover:bg-blue-50/40',
-                  selectedCaseId === row.id && 'bg-blue-50 ring-1 ring-inset ring-blue-100'
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCaseId(row.id)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <p className="font-semibold text-slate-900">{row.patient_name}</p>
-                    <p className="text-xs text-slate-500">{row.patient_code} • Student: {row.student_name}</p>
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={caseVariant(row.status)}>{row.status}</Badge>
-                    {isSupervisor && (
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => deleteCase(row)}
-                        disabled={savingAssignment}
-                      >
-                        <Trash2 className="mr-1 h-4 w-4" />
-                        Remove
-                      </Button>
-                    )}
+            {rows.map((row) => {
+              const studentRemoved = row.student_assignment_active === false;
+              return (
+                <div
+                  key={row.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedCaseId(row.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedCaseId(row.id);
+                    }
+                  }}
+                  className={cn(
+                    'cursor-pointer rounded-xl border px-5 py-5 text-left transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                    selectedCaseId === row.id
+                      ? 'border-blue-200 bg-blue-50 shadow-sm ring-1 ring-inset ring-blue-100'
+                      : studentRemoved
+                        ? 'border-amber-200 bg-amber-50/40'
+                        : 'border-gray-100 bg-white'
+                  )}
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="break-words text-lg font-bold leading-tight text-slate-900">{row.patient_name}</p>
+                      <p className="mt-1 text-sm text-slate-500">{row.patient_code} • Student: {row.student_name}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={studentRemoved ? 'warning' : caseVariant(row.status)}>{studentRemoved ? 'STUDENT REMOVED' : row.status}</Badge>
+                    </div>
+                  </div>
+                  {studentRemoved && (
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-relaxed text-amber-800">
+                      This patient has been removed from the student. Delete is available in the selected case details below.
+                    </div>
+                  )}
+                  <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-600">
+                    <span>Tasks: {row.total_tasks}</span>
+                    <span>Done: {row.completed_tasks}</span>
+                    <span>Reviewed: {row.reviewed_tasks}</span>
+                    <span>Overdue: {row.overdue_tasks}</span>
+                  </div>
+                  <div className="mt-3">
+                    <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+                      <span>Task progress</span>
+                      <span>{row.progress_percentage || 0}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div
+                        className="h-2 rounded-full bg-blue-600 transition-all"
+                        style={{ width: `${Math.max(0, Math.min(100, row.progress_percentage || 0))}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
-                  <span>Tasks: {row.total_tasks}</span>
-                  <span>Done: {row.completed_tasks}</span>
-                  <span>Reviewed: {row.reviewed_tasks}</span>
-                  <span>Overdue: {row.overdue_tasks}</span>
-                </div>
-                <div className="mt-3">
-                  <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
-                    <span>Task progress</span>
-                    <span>{row.progress_percentage || 0}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-blue-600 transition-all"
-                      style={{ width: `${Math.max(0, Math.min(100, row.progress_percentage || 0))}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 
-        <div className="space-y-6">
           {!selectedCase && (
             <Card className="p-6 text-sm text-slate-500">
               Select a case to view assigned tasks, deadlines, student completion state, and supervisor review.
@@ -522,7 +543,9 @@ export function StudentCasesPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl font-bold text-slate-900">{selectedCase.patient_name}</h3>
-                      <Badge variant={caseVariant(selectedCase.status)}>{selectedCase.status}</Badge>
+                      <Badge variant={selectedCaseStudentRemoved ? 'warning' : caseVariant(selectedCase.status)}>
+                        {selectedCaseStudentRemoved ? 'STUDENT REMOVED' : selectedCase.status}
+                      </Badge>
                     </div>
                     <p className="text-sm text-slate-500">
                       {selectedCase.patient_code} • Student: {selectedCase.student_name} • Supervisor: {selectedCase.supervisor_name}
@@ -534,6 +557,20 @@ export function StudentCasesPage() {
                   </Button>
                 </div>
 
+                {selectedCaseStudentRemoved && (
+                  <div className="mt-5 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="font-semibold">
+                      This patient has been removed from {selectedCase.student_name}. Delete this student case when it is no longer needed.
+                    </p>
+                    {isSupervisor && (
+                      <Button variant="danger" onClick={() => deleteCase(selectedCase)} disabled={savingAssignment}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Case
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
                   <MetricCard label="Assigned Tasks" value={selectedCase.total_tasks} />
                   <MetricCard label="Completed" value={selectedCase.completed_tasks} tone="text-emerald-600" />
@@ -544,7 +581,7 @@ export function StudentCasesPage() {
                 {loadingDetail && <p className="mt-4 text-sm text-slate-500">Loading task workspace...</p>}
               </Card>
 
-              {isSupervisor && (
+              {isSupervisor && !selectedCaseStudentRemoved && (
                 <Card className="p-6">
                   <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
                     <Plus className="h-5 w-5 text-blue-600" />
@@ -561,7 +598,6 @@ export function StudentCasesPage() {
                         value={taskForm.description}
                         onChange={(e) => setTaskForm((prev) => ({ ...prev, description: e.target.value }))}
                         className="min-h-28 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Example: Record the patient's medical history and confirm any drug allergies."
                       />
                     </div>
                     <div className="space-y-1">
@@ -767,12 +803,40 @@ export function StudentCasesPage() {
               )}
 
               <Card className="p-6">
-                <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-                  <BookOpen className="h-5 w-5 text-slate-600" />
-                  Chronological Logbook
-                </h4>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                    <BookOpen className="h-5 w-5 text-slate-600" />
+                    Chronological Logbook
+                  </h4>
+                  <div className="inline-flex w-fit overflow-hidden rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setLogbookOrder('latest')}
+                      className={cn(
+                        'rounded-md px-3 py-1.5 text-sm font-semibold transition-colors',
+                        logbookOrder === 'latest'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      )}
+                    >
+                      Latest first
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLogbookOrder('oldest')}
+                      className={cn(
+                        'rounded-md px-3 py-1.5 text-sm font-semibold transition-colors',
+                        logbookOrder === 'oldest'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      )}
+                    >
+                      Oldest first
+                    </button>
+                  </div>
+                </div>
                 <div className="mt-5 space-y-4">
-                  {detail?.logbook?.length ? detail.logbook.map((entry) => (
+                  {sortedLogbookEntries.length ? sortedLogbookEntries.map((entry) => (
                     <div key={entry.id} className="rounded-xl border border-slate-200 p-4">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -803,7 +867,6 @@ export function StudentCasesPage() {
               )}
             </>
           )}
-        </div>
       </div>
 
       {confirmDialog.open && (
