@@ -9,23 +9,15 @@ const {
 const { logAuditEvent } = require('../middleware/errorHandler');
 
 const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED'];
-const QUEUE_VIEW_ROLES = new Set(['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT']);
-const QUEUE_GLOBAL_SCOPE_ROLES = new Set(['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON']);
-const QUEUE_LOCAL_SCOPE_ROLES = new Set(['STUDENT']);
-const QUEUE_WRITE_ROLES = new Set(['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT', 'RECEPTION']);
-const QUEUE_ADD_ROLES = new Set(['RECEPTION']);
-const QUEUE_DELETE_ROLES = new Set([]);
+const GLOBAL_QUEUE_ROLES = new Set(['ADMIN', 'NURSE', 'RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON']);
+const LOCAL_QUEUE_ROLES = new Set(['STUDENT']);
 
 const normalizeQueueStatus = (status) => {
   const normalized = String(status || '').toUpperCase();
   const legacyMap = {
     WAITING: 'IN_WAITING_ROOM',
-    'IN WAITING ROOM': 'IN_WAITING_ROOM',
     PREPARATION: 'UNDER_CONSULTATION',
-    'UNDER CONSULTATION': 'UNDER_CONSULTATION',
-    IN_TREATMENT: 'UNDER_TREATMENT',
-    'UNDER TREATMENT': 'UNDER_TREATMENT',
-    'TREATMENTS ARE DONE / DONE': 'COMPLETED'
+    IN_TREATMENT: 'UNDER_TREATMENT'
   };
   return legacyMap[normalized] || normalized || 'IN_WAITING_ROOM';
 };
@@ -40,30 +32,23 @@ const cleanupCompletedQueueEntries = async () => {
 };
 
 const buildQueueScope = (user, alias = 'q') => {
-  if (!QUEUE_VIEW_ROLES.has(user.role)) {
-    return { clause: 'AND 1 = 0', params: [] };
-  }
-
-  if (QUEUE_GLOBAL_SCOPE_ROLES.has(user.role)) {
+  if (GLOBAL_QUEUE_ROLES.has(user.role)) {
     return { clause: '', params: [] };
   }
 
-  if (QUEUE_LOCAL_SCOPE_ROLES.has(user.role)) {
+  if (LOCAL_QUEUE_ROLES.has(user.role)) {
     return {
       clause: `
-        AND (
-          ${alias}.student_id = ?
-          OR EXISTS (
-            SELECT 1
-            FROM patient_assignments pa_scope
-            WHERE pa_scope.patient_id = ${alias}.patient_id
-              AND pa_scope.user_id = ?
-              AND pa_scope.assignment_role = ?
-              AND pa_scope.active = TRUE
-          )
+        AND EXISTS (
+          SELECT 1
+          FROM patient_assignments pa_scope
+          WHERE pa_scope.patient_id = ${alias}.patient_id
+            AND pa_scope.user_id = ?
+            AND pa_scope.assignment_role = ?
+            AND pa_scope.active = TRUE
         )
       `,
-      params: [user.id, user.id, user.role]
+      params: [user.id, user.role]
     };
   }
 
@@ -85,11 +70,11 @@ const getQueueEntryForUser = async (queueId, user, permission = 'read') => {
     return null;
   }
 
-  if (permission === 'delete' && !QUEUE_DELETE_ROLES.has(user.role)) {
+  if (permission === 'delete' && user.role !== 'RECEPTION') {
     return null;
   }
 
-  if (permission === 'update' && !QUEUE_WRITE_ROLES.has(user.role)) {
+  if (permission === 'update' && user.role === 'ADMIN') {
     return null;
   }
 
@@ -158,8 +143,8 @@ const getQueue = async (req, res) => {
       ORDER BY 
         CASE q.status
           WHEN 'IN_WAITING_ROOM' THEN 1
-          WHEN 'UNDER_TREATMENT' THEN 2
-          WHEN 'UNDER_CONSULTATION' THEN 3
+          WHEN 'UNDER_CONSULTATION' THEN 2
+          WHEN 'UNDER_TREATMENT' THEN 3
           WHEN 'COMPLETED' THEN 4
         END,
         CASE q.priority 
@@ -225,10 +210,10 @@ const getQueue = async (req, res) => {
 // Add patient to queue
 const addToQueue = async (req, res) => {
   try {
-    if (!QUEUE_ADD_ROLES.has(req.user.role)) {
+    if (req.user.role !== 'RECEPTION') {
       return res.status(403).json({
         success: false,
-        message: 'You do not have permission to add patients to the live clinic queue'
+        message: 'Only receptionists can add patients to the live clinic queue'
       });
     }
 
@@ -394,7 +379,7 @@ const removeFromQueue = async (req, res) => {
     if (!existingQueue) {
       return res.status(403).json({
         success: false,
-        message: 'Deleting queue entries is not permitted from the clinic queue'
+        message: 'Only receptionists can delete queue entries'
       });
     }
 
