@@ -260,15 +260,6 @@ export function ClinicQueuePage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Live Clinic Queue</h2>
-          <p className="text-gray-500">
-            {isReadOnly
-              ? 'Read-only global clinic queue.'
-              : role === 'RECEPTION'
-                ? 'Global reception queue for registered patients.'
-                : role === 'STUDENT'
-                  ? 'Queue entries for your assigned patients.'
-                  : 'Global clinic queue with status control.'}
-          </p>
         </div>
         <div className="flex gap-2">
           <RefreshButton onClick={loadQueue} loading={loading} />

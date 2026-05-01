@@ -121,7 +121,6 @@ export function DashboardPage() {
       <div className="flex justify-between items-center">
         <header>
           <h2 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name}</h2>
-          <p className="text-gray-500">Live operational dashboard.</p>
         </header>
         <RefreshButton onClick={() => loadDashboard(true)} loading={refreshing} />
       </div>

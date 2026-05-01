@@ -181,7 +181,6 @@ export function AuditLogsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Audit Log</h2>
-          <p className="text-gray-500">Read-only system activity across all users and roles.</p>
         </div>
         <RefreshButton onClick={loadLogs} loading={loading} />
       </div>

@@ -475,9 +475,6 @@ const UserManagement: React.FC = () => {
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
         User Management
       </Typography>
-      <Typography variant="body1" sx={{ color: '#64748b', mb: 2.25 }}>
-        Manage hospital users, roles, and account lifecycle.
-      </Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>

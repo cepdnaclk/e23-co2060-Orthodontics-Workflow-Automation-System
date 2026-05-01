@@ -213,9 +213,7 @@ export function Topbar() {
 
   return (
     <header className="h-16 border-b border-gray-100 bg-white px-6 flex items-center justify-between sticky top-0 z-30">
-      <div className="flex items-center">
-        <span className="text-sm font-semibold tracking-wide text-slate-500">Dashboard</span>
-      </div>
+      <div aria-hidden="true" />
 
       <div className="flex items-center">
         <Button

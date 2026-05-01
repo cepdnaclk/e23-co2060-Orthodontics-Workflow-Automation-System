@@ -99,7 +99,6 @@ export function RequestApprovalsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Request Approvals</h2>
-        <p className="text-gray-500">Review receptionist-requested assignment changes for your account.</p>
       </div>
 
       {error && (

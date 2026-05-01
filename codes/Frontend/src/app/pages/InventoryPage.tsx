@@ -401,7 +401,6 @@ export function InventoryPage() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Materials & Inventory</h2>
-          <p className="text-gray-500">Live inventory with stock updates and alerts.</p>
         </div>
         <div className="flex gap-2">
           {canMutateInventory && deletedMode === 'active' && (
