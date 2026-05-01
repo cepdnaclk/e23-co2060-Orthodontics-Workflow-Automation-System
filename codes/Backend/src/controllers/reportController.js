@@ -8,23 +8,22 @@ const parsePositiveInt = (value, fallback) => {
   return parsed;
 };
 
-// Get patient status report
 const getPatientStatusReport = async (req, res) => {
   try {
     const { start_date, end_date, group_by = 'status' } = req.query;
 
     let dateFilter = '';
-    let queryParams = [];
+    const queryParams = [];
 
     if (start_date && end_date) {
-      dateFilter = 'WHERE created_at BETWEEN ? AND ?';
-      queryParams = [start_date, end_date];
+      dateFilter = 'AND created_at BETWEEN ? AND ?';
+      queryParams.push(start_date, end_date);
     } else if (start_date) {
-      dateFilter = 'WHERE created_at >= ?';
-      queryParams = [start_date];
+      dateFilter = 'AND created_at >= ?';
+      queryParams.push(start_date);
     } else if (end_date) {
-      dateFilter = 'WHERE created_at <= ?';
-      queryParams = [end_date];
+      dateFilter = 'AND created_at <= ?';
+      queryParams.push(end_date);
     }
 
     let groupByClause;
@@ -37,7 +36,7 @@ const getPatientStatusReport = async (req, res) => {
         break;
       case 'age_group':
         groupByClause = `
-          CASE 
+          CASE
             WHEN TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) < 12 THEN 'Under 12'
             WHEN TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) BETWEEN 12 AND 18 THEN '12-18'
             WHEN TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) BETWEEN 19 AND 25 THEN '19-25'
@@ -54,25 +53,24 @@ const getPatientStatusReport = async (req, res) => {
     }
 
     const reportQuery = `
-      SELECT 
+      SELECT
         ${groupByClause} as group_key,
         COUNT(*) as patient_count,
         AVG(TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE())) as average_age,
         COUNT(CASE WHEN gender = 'MALE' THEN 1 END) as male_count,
         COUNT(CASE WHEN gender = 'FEMALE' THEN 1 END) as female_count,
         COUNT(CASE WHEN nhi_verified = TRUE THEN 1 END) as nhi_verified_count
-      FROM patients 
+      FROM patients
       WHERE deleted_at IS NULL
-        ${dateFilter ? 'AND ' + dateFilter.substring(6) : ''}
+        ${dateFilter}
       GROUP BY ${groupByClause}
       ORDER BY patient_count DESC
     `;
 
     const reportData = await query(reportQuery, queryParams);
 
-    // Get overall statistics
     const statsQuery = `
-      SELECT 
+      SELECT
         COUNT(*) as total_patients,
         COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active_patients,
         COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_patients,
@@ -80,7 +78,7 @@ const getPatientStatusReport = async (req, res) => {
         COUNT(CASE WHEN status = 'MAINTENANCE' THEN 1 END) as maintenance_patients,
         AVG(TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE())) as overall_avg_age,
         COUNT(CASE WHEN nhi_verified = TRUE THEN 1 END) as total_nhi_verified
-      FROM patients 
+      FROM patients
       WHERE deleted_at IS NULL
         ${dateFilter}
     `;
@@ -91,50 +89,59 @@ const getPatientStatusReport = async (req, res) => {
       success: true,
       data: {
         overview: stats[0],
-        breakdown: reportData
-      }
+        breakdown: reportData,
+      },
     });
   } catch (error) {
     console.error('Get patient status report error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 };
 
-// Get visit summary report
 const getVisitSummaryReport = async (req, res) => {
   try {
     const { start_date, end_date, provider_id, group_by = 'month' } = req.query;
 
-    let dateFilter = '';
-    let queryParams = [];
+    let dateFilterWithAlias = '';
+    let dateFilterWithoutAlias = '';
+    const baseDateParams = [];
 
     if (start_date && end_date) {
-      dateFilter = 'AND visit_date BETWEEN ? AND ?';
-      queryParams = [start_date, end_date];
+      dateFilterWithAlias = 'AND v.visit_date BETWEEN ? AND ?';
+      dateFilterWithoutAlias = 'AND visit_date BETWEEN ? AND ?';
+      baseDateParams.push(start_date, end_date);
     } else if (start_date) {
-      dateFilter = 'AND visit_date >= ?';
-      queryParams = [start_date];
+      dateFilterWithAlias = 'AND v.visit_date >= ?';
+      dateFilterWithoutAlias = 'AND visit_date >= ?';
+      baseDateParams.push(start_date);
     } else if (end_date) {
-      dateFilter = 'AND visit_date <= ?';
-      queryParams = [end_date];
+      dateFilterWithAlias = 'AND v.visit_date <= ?';
+      dateFilterWithoutAlias = 'AND visit_date <= ?';
+      baseDateParams.push(end_date);
     }
 
-    let providerFilter = '';
+    let providerFilterWithAlias = '';
+    let providerFilterWithoutAlias = '';
+    const providerParams = [];
     if (provider_id) {
-      providerFilter = 'AND v.provider_id = ?';
-      queryParams.push(provider_id);
+      providerFilterWithAlias = 'AND v.provider_id = ?';
+      providerFilterWithoutAlias = 'AND provider_id = ?';
+      providerParams.push(provider_id);
     }
 
     let groupByClause;
     switch (group_by) {
+      case 'hour':
+        groupByClause = 'DATE_FORMAT(visit_date, "%Y-%m-%d %H:00:00")';
+        break;
       case 'month':
         groupByClause = 'DATE_FORMAT(visit_date, "%Y-%m")';
         break;
       case 'week':
-        groupByClause = 'YEARWEEK(visit_date)';
+        groupByClause = 'DATE_FORMAT(DATE_SUB(visit_date, INTERVAL WEEKDAY(visit_date) DAY), "%Y-%m-%d")';
         break;
       case 'day':
         groupByClause = 'DATE(visit_date)';
@@ -150,7 +157,7 @@ const getVisitSummaryReport = async (req, res) => {
     }
 
     const reportQuery = `
-      SELECT 
+      SELECT
         ${groupByClause} as group_key,
         COUNT(*) as total_visits,
         COUNT(CASE WHEN v.status = 'COMPLETED' THEN 1 END) as completed_visits,
@@ -165,25 +172,27 @@ const getVisitSummaryReport = async (req, res) => {
       FROM visits v
       LEFT JOIN users u ON v.provider_id = u.id
       WHERE 1=1
-        ${dateFilter}
-        ${providerFilter}
+        ${dateFilterWithAlias}
+        ${providerFilterWithAlias}
       GROUP BY ${groupByClause}
       ORDER BY group_key DESC
     `;
 
-    const reportData = await query(reportQuery, queryParams);
+    const reportData = await query(reportQuery, [...baseDateParams, ...providerParams]);
 
-    // Get procedure type statistics
-    const providerFilterNoAlias = provider_id ? 'AND provider_id = ?' : '';
     const procedureStatsQuery = `
-      SELECT 
+      SELECT
         procedure_type,
         COUNT(*) as count,
-        COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_count
-      FROM visits 
+        COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_count,
+        COUNT(CASE WHEN status = 'SCHEDULED' THEN 1 END) as scheduled_count,
+        COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) as cancelled_count,
+        COUNT(CASE WHEN status = 'DID_NOT_ATTEND' THEN 1 END) as did_not_attend_count,
+        COUNT(CASE WHEN status NOT IN ('COMPLETED', 'SCHEDULED', 'CANCELLED', 'DID_NOT_ATTEND') THEN 1 END) as other_status_count
+      FROM visits
       WHERE 1=1
-        ${dateFilter}
-        ${providerFilterNoAlias}
+        ${dateFilterWithoutAlias}
+        ${providerFilterWithoutAlias}
         AND procedure_type IS NOT NULL
         AND procedure_type != ''
       GROUP BY procedure_type
@@ -191,11 +200,10 @@ const getVisitSummaryReport = async (req, res) => {
       LIMIT 20
     `;
 
-    const procedureStats = await query(procedureStatsQuery, queryParams);
+    const procedureStats = await query(procedureStatsQuery, [...baseDateParams, ...providerParams]);
 
-    // Get provider workload
     const providerStatsQuery = `
-      SELECT 
+      SELECT
         u.name as provider_name,
         u.role as provider_role,
         COUNT(*) as total_visits,
@@ -209,33 +217,33 @@ const getVisitSummaryReport = async (req, res) => {
       FROM visits v
       LEFT JOIN users u ON v.provider_id = u.id
       WHERE 1=1
-        ${dateFilter}
+        ${dateFilterWithAlias}
+        ${providerFilterWithAlias}
         AND v.provider_id IS NOT NULL
       GROUP BY v.provider_id, u.name, u.role
       ORDER BY total_visits DESC
       LIMIT 10
     `;
 
-    const providerStats = await query(providerStatsQuery, queryParams);
+    const providerStats = await query(providerStatsQuery, [...baseDateParams, ...providerParams]);
 
     res.json({
       success: true,
       data: {
         trends: reportData,
         procedure_breakdown: procedureStats,
-        provider_workload: providerStats
-      }
+        provider_workload: providerStats,
+      },
     });
   } catch (error) {
     console.error('Get visit summary report error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 };
 
-// Get inventory alerts report
 const getInventoryAlertsReport = async (req, res) => {
   try {
     const { alert_type = 'all' } = req.query;
@@ -246,29 +254,29 @@ const getInventoryAlertsReport = async (req, res) => {
         whereClause = 'WHERE i.deleted_at IS NULL AND i.purged_at IS NULL AND i.quantity = 0';
         break;
       case 'low_stock':
-        whereClause = 'WHERE i.deleted_at IS NULL AND i.purged_at IS NULL AND i.quantity <= i.minimum_threshold AND i.quantity > 0';
+        whereClause = 'WHERE i.deleted_at IS NULL AND i.purged_at IS NULL AND i.quantity > i.minimum_threshold / 2 AND i.quantity <= i.minimum_threshold';
         break;
       case 'critical':
-        whereClause = 'WHERE i.deleted_at IS NULL AND i.purged_at IS NULL AND i.quantity <= i.minimum_threshold / 2';
+        whereClause = 'WHERE i.deleted_at IS NULL AND i.purged_at IS NULL AND i.quantity > 0 AND i.quantity <= i.minimum_threshold / 2';
         break;
       default:
         whereClause = 'WHERE i.deleted_at IS NULL AND i.purged_at IS NULL AND i.quantity <= i.minimum_threshold';
     }
 
     const alertsQuery = `
-      SELECT 
+      SELECT
         i.*,
-        CASE 
+        CASE
           WHEN i.quantity = 0 THEN 'OUT_OF_STOCK'
-          WHEN i.quantity <= i.minimum_threshold / 2 THEN 'CRITICAL'
+          WHEN i.quantity > 0 AND i.quantity <= i.minimum_threshold / 2 THEN 'CRITICAL'
           ELSE 'LOW_STOCK'
         END as alert_level,
         (i.minimum_threshold - i.quantity) as shortage_quantity,
         ROUND(((i.minimum_threshold - i.quantity) / NULLIF(i.minimum_threshold, 0)) * 100, 2) as shortage_percentage
       FROM inventory_items i
       ${whereClause}
-      ORDER BY 
-        CASE 
+      ORDER BY
+        CASE
           WHEN i.quantity = 0 THEN 1
           WHEN i.quantity <= i.minimum_threshold / 2 THEN 2
           ELSE 3
@@ -278,13 +286,12 @@ const getInventoryAlertsReport = async (req, res) => {
 
     const alerts = await query(alertsQuery);
 
-    // Get inventory summary
     const summaryQuery = `
-      SELECT 
+      SELECT
         COUNT(*) as total_items,
         COUNT(CASE WHEN quantity = 0 THEN 1 END) as out_of_stock_count,
-        COUNT(CASE WHEN quantity <= minimum_threshold AND quantity > 0 THEN 1 END) as low_stock_count,
-        COUNT(CASE WHEN quantity <= minimum_threshold / 2 THEN 1 END) as critical_count,
+        COUNT(CASE WHEN quantity > 0 AND quantity <= minimum_threshold / 2 THEN 1 END) as critical_count,
+        COUNT(CASE WHEN quantity > minimum_threshold / 2 AND quantity <= minimum_threshold THEN 1 END) as low_stock_count,
         COUNT(CASE WHEN quantity > minimum_threshold THEN 1 END) as normal_count,
         SUM(quantity) as total_quantity,
         SUM(CASE WHEN quantity <= minimum_threshold THEN quantity ELSE 0 END) as at_risk_quantity
@@ -295,13 +302,13 @@ const getInventoryAlertsReport = async (req, res) => {
 
     const summary = await query(summaryQuery);
 
-    // Get category breakdown
     const categoryBreakdownQuery = `
-      SELECT 
+      SELECT
         category,
         COUNT(*) as total_items,
         COUNT(CASE WHEN quantity = 0 THEN 1 END) as out_of_stock,
-        COUNT(CASE WHEN quantity <= minimum_threshold THEN 1 END) as low_stock,
+        COUNT(CASE WHEN quantity > 0 AND quantity <= minimum_threshold / 2 THEN 1 END) as critical,
+        COUNT(CASE WHEN quantity > minimum_threshold / 2 AND quantity <= minimum_threshold THEN 1 END) as low_stock,
         SUM(quantity) as total_quantity
       FROM inventory_items
       WHERE deleted_at IS NULL
@@ -312,9 +319,8 @@ const getInventoryAlertsReport = async (req, res) => {
 
     const categoryBreakdown = await query(categoryBreakdownQuery);
 
-    // Get recent stock movements for alerted items
     const recentMovementsQuery = `
-      SELECT 
+      SELECT
         it.*,
         ii.name as item_name,
         ii.category as item_category,
@@ -335,21 +341,20 @@ const getInventoryAlertsReport = async (req, res) => {
       success: true,
       data: {
         overview: summary[0],
-        alerts: alerts,
+        alerts,
         category_breakdown: categoryBreakdown,
-        recent_movements: recentMovements
-      }
+        recent_movements: recentMovements,
+      },
     });
   } catch (error) {
     console.error('Get inventory alerts report error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 };
 
-// Get comprehensive dashboard report
 const getDashboardReport = async (req, res) => {
   try {
     const { period = 'month' } = req.query;
@@ -372,9 +377,8 @@ const getDashboardReport = async (req, res) => {
         dateFilter = 'DATE_SUB(NOW(), INTERVAL 1 MONTH)';
     }
 
-    // Get key metrics
     const metricsQuery = `
-      SELECT 
+      SELECT
         (SELECT COUNT(*) FROM patients WHERE deleted_at IS NULL) as total_patients,
         (SELECT COUNT(*) FROM patients WHERE status = 'ACTIVE' AND deleted_at IS NULL) as active_patients,
         (SELECT COUNT(*) FROM visits WHERE visit_date >= ${dateFilter}) as period_visits,
@@ -387,13 +391,12 @@ const getDashboardReport = async (req, res) => {
 
     const metrics = await query(metricsQuery);
 
-    // Get patient admission trends
     const patientTrendsQuery = `
-      SELECT 
+      SELECT
         DATE_FORMAT(created_at, '%Y-%m-%d') as date,
         COUNT(*) as new_patients
-      FROM patients 
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      FROM patients
+      WHERE created_at >= ${dateFilter}
         AND deleted_at IS NULL
       GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
       ORDER BY date ASC
@@ -401,26 +404,24 @@ const getDashboardReport = async (req, res) => {
 
     const patientTrends = await query(patientTrendsQuery);
 
-    // Get visit trends
     const visitTrendsQuery = `
-      SELECT 
+      SELECT
         DATE_FORMAT(visit_date, '%Y-%m-%d') as date,
         COUNT(*) as visits,
         COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed
-      FROM visits 
-      WHERE visit_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      FROM visits
+      WHERE visit_date >= ${dateFilter}
       GROUP BY DATE_FORMAT(visit_date, '%Y-%m-%d')
       ORDER BY date ASC
     `;
 
     const visitTrends = await query(visitTrendsQuery);
 
-    // Get top procedures
     const topProceduresQuery = `
-      SELECT 
+      SELECT
         procedure_type,
         COUNT(*) as count
-      FROM visits 
+      FROM visits
       WHERE visit_date >= ${dateFilter}
         AND procedure_type IS NOT NULL
         AND procedure_type != ''
@@ -431,9 +432,8 @@ const getDashboardReport = async (req, res) => {
 
     const topProcedures = await query(topProceduresQuery);
 
-    // Get department activity
     const departmentActivityQuery = `
-      SELECT 
+      SELECT
         u.department,
         COUNT(DISTINCT u.id) as user_count,
         COUNT(DISTINCT v.id) as visit_count,
@@ -448,14 +448,13 @@ const getDashboardReport = async (req, res) => {
 
     const departmentActivity = await query(departmentActivityQuery);
 
-    // Get student progress
     const studentProgressQuery = `
-      SELECT 
+      SELECT
         u.name as student_name,
         COUNT(*) as total_cases,
         COUNT(CASE WHEN c.status = 'VERIFIED' THEN 1 END) as verified_cases,
         ROUND(
-          (COUNT(CASE WHEN c.status = 'VERIFIED' THEN 1 END) / 
+          (COUNT(CASE WHEN c.status = 'VERIFIED' THEN 1 END) /
           NULLIF(COUNT(*), 0)) * 100, 2
         ) as completion_rate
       FROM users u
@@ -477,34 +476,25 @@ const getDashboardReport = async (req, res) => {
         visit_trends: visitTrends,
         top_procedures: topProcedures,
         department_activity: departmentActivity,
-        student_progress: studentProgress
-      }
+        student_progress: studentProgress,
+      },
     });
   } catch (error) {
     console.error('Get dashboard report error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 };
 
-// Get audit logs report (Admin-only, read-only)
 const getAuditLogsReport = async (req, res) => {
   try {
     const page = parsePositiveInt(req.query.page, 1);
     const limit = Math.min(parsePositiveInt(req.query.limit, 25), 200);
     const offset = (page - 1) * limit;
 
-    const {
-      action,
-      role,
-      entity_type,
-      user_id,
-      search,
-      start_date,
-      end_date
-    } = req.query;
+    const { action, role, entity_type, user_id, search, start_date, end_date } = req.query;
 
     const whereClauses = [];
     const params = [];
@@ -587,15 +577,15 @@ const getAuditLogsReport = async (req, res) => {
           current_page: page,
           total_pages: Math.max(1, Math.ceil(total / limit)),
           total_records: total,
-          limit
-        }
-      }
+          limit,
+        },
+      },
     });
   } catch (error) {
     console.error('Get audit logs report error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 };
@@ -605,5 +595,5 @@ module.exports = {
   getVisitSummaryReport,
   getInventoryAlertsReport,
   getDashboardReport,
-  getAuditLogsReport
+  getAuditLogsReport,
 };
