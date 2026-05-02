@@ -8,6 +8,26 @@ const parsePositiveInt = (value, fallback) => {
   return parsed;
 };
 
+const normalizeDateTimeInput = (value) => {
+  if (value === undefined || value === null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const direct = raw.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (direct) {
+    const [, datePart, hh = '00', mm = '00', ss = '00'] = direct;
+    return `${datePart} ${hh}:${mm}:${ss}`;
+  }
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const hour = String(parsed.getHours()).padStart(2, '0');
+  const minute = String(parsed.getMinutes()).padStart(2, '0');
+  const second = String(parsed.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+};
+
 // Get patient status report
 const getPatientStatusReport = async (req, res) => {
   try {
@@ -615,10 +635,109 @@ const getAuditLogsReport = async (req, res) => {
   }
 };
 
+const getSummaryPatientList = async (req, res) => {
+  try {
+    const metric = String(req.query.metric || '').trim().toLowerCase();
+    const startDate = normalizeDateTimeInput(req.query.start_date);
+    const endDate = normalizeDateTimeInput(req.query.end_date);
+
+    if (!['total_patients', 'active_patients', 'visits_in_period'].includes(metric)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid metric. Use total_patients, active_patients, or visits_in_period.'
+      });
+    }
+
+    const dateParams = [];
+    let patientDateFilter = '';
+    let visitDateFilter = '';
+
+    if (startDate && endDate) {
+      patientDateFilter = ' AND p.created_at BETWEEN ? AND ?';
+      visitDateFilter = ' AND v.visit_date BETWEEN ? AND ?';
+      dateParams.push(startDate, endDate);
+    } else if (startDate) {
+      patientDateFilter = ' AND p.created_at >= ?';
+      visitDateFilter = ' AND v.visit_date >= ?';
+      dateParams.push(startDate);
+    } else if (endDate) {
+      patientDateFilter = ' AND p.created_at <= ?';
+      visitDateFilter = ' AND v.visit_date <= ?';
+      dateParams.push(endDate);
+    }
+
+    let rows = [];
+
+    if (metric === 'visits_in_period') {
+      rows = await query(
+        `SELECT
+           p.id,
+           p.patient_code,
+           p.first_name,
+           p.last_name,
+           p.gender,
+           p.status,
+           p.phone,
+           p.email,
+           p.created_at,
+           COUNT(DISTINCT v.id) AS visit_count_in_period,
+           MIN(v.visit_date) AS first_visit_in_period,
+           MAX(v.visit_date) AS last_visit_in_period
+         FROM patients p
+         INNER JOIN visits v ON v.patient_id = p.id
+         WHERE p.deleted_at IS NULL
+           ${visitDateFilter}
+         GROUP BY p.id, p.patient_code, p.first_name, p.last_name, p.gender, p.status, p.phone, p.email, p.created_at
+         ORDER BY last_visit_in_period DESC, p.last_name ASC, p.first_name ASC`,
+        dateParams
+      );
+    } else {
+      const statusFilter = metric === 'active_patients' ? ` AND p.status = 'ACTIVE'` : '';
+      rows = await query(
+        `SELECT
+           p.id,
+           p.patient_code,
+           p.first_name,
+           p.last_name,
+           p.gender,
+           p.status,
+           p.phone,
+           p.email,
+           p.created_at,
+           MAX(v.visit_date) AS last_visit_in_period
+         FROM patients p
+         LEFT JOIN visits v ON v.patient_id = p.id
+         WHERE p.deleted_at IS NULL
+           ${patientDateFilter}
+           ${statusFilter}
+         GROUP BY p.id, p.patient_code, p.first_name, p.last_name, p.gender, p.status, p.phone, p.email, p.created_at
+         ORDER BY p.created_at DESC, p.last_name ASC, p.first_name ASC`,
+        dateParams
+      );
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        metric,
+        patients: rows,
+        total: rows.length
+      }
+    });
+  } catch (error) {
+    console.error('Get summary patient list error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
 module.exports = {
   getPatientStatusReport,
   getVisitSummaryReport,
   getInventoryAlertsReport,
   getDashboardReport,
-  getAuditLogsReport
+  getAuditLogsReport,
+  getSummaryPatientList
 };
