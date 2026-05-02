@@ -63,6 +63,7 @@ export const API_ENDPOINTS = {
   // Visits
   VISITS: {
     TODAY: '/api/visits/today',
+    UPCOMING: '/api/visits/upcoming',
     LIST: '/api/visits',
     DETAIL: (id: string) => `/api/visits/${id}`,
     UPDATE: (id: string) => `/api/visits/${id}`,

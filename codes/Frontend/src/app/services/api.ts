@@ -604,6 +604,14 @@ export const apiService = {
     
     getToday: () => 
       apiClient.get<any[]>(API_ENDPOINTS.VISITS.TODAY),
+
+    getUpcoming: (params?: { limit?: number }) => {
+      const query = new URLSearchParams();
+      if (params?.limit) query.append('limit', params.limit.toString());
+
+      const queryString = query.toString();
+      return apiClient.get<any[]>(`${API_ENDPOINTS.VISITS.UPCOMING}${queryString ? `?${queryString}` : ''}`);
+    },
     
     getStats: () => 
       apiClient.get(API_ENDPOINTS.VISITS.STATS),
@@ -783,8 +791,13 @@ export const apiService = {
 
   // Queue
   queue: {
-    getList: () => 
-      apiClient.get<any>(API_ENDPOINTS.QUEUE.LIST),
+    getList: (params?: { scope?: 'assigned' }) => {
+      const query = new URLSearchParams();
+      if (params?.scope) query.append('scope', params.scope);
+
+      const queryString = query.toString();
+      return apiClient.get<any>(`${API_ENDPOINTS.QUEUE.LIST}${queryString ? `?${queryString}` : ''}`);
+    },
 
     getStats: () =>
       apiClient.get<any>(API_ENDPOINTS.QUEUE.STATS),

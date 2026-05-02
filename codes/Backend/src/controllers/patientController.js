@@ -12,6 +12,26 @@ const { ensureStudentCaseForAssignment } = require('../services/studentCaseServi
 const ASSIGNMENT_SCOPED_ROLES = new Set(['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT']);
 const APPROVAL_REQUIRED_ASSIGNMENT_ROLES = new Set(['ORTHODONTIST', 'DENTAL_SURGEON']);
 
+const buildPatientAssignmentScope = (user, alias = 'p') => {
+  if (!ASSIGNMENT_SCOPED_ROLES.has(user.role)) {
+    return { clause: '', params: [] };
+  }
+
+  return {
+    clause: `
+      EXISTS (
+        SELECT 1
+        FROM patient_assignments pa_scope
+        WHERE pa_scope.patient_id = ${alias}.id
+          AND pa_scope.user_id = ?
+          AND pa_scope.assignment_role = ?
+          AND pa_scope.active = TRUE
+      )
+    `,
+    params: [user.id, user.role]
+  };
+};
+
 const SORT_FIELD_MAP = {
   id: 'p.id',
   created_at: 'p.created_at',
@@ -852,18 +872,9 @@ const getPatients = async (req, res) => {
     }
 
     if (ASSIGNMENT_SCOPED_ROLES.has(req.user.role)) {
-      whereClauses.push(`
-        EXISTS (
-          SELECT 1
-          FROM patient_assignments pa_scope
-          WHERE pa_scope.patient_id = p.id
-            AND pa_scope.user_id = ?
-            AND pa_scope.assignment_role = ?
-            AND pa_scope.active = TRUE
-          LIMIT 1
-        )
-      `);
-      whereValues.push(req.user.id, req.user.role);
+      const scope = buildPatientAssignmentScope(req.user, 'p');
+      whereClauses.push(scope.clause);
+      whereValues.push(...scope.params);
     }
 
     const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -1367,6 +1378,7 @@ const reactivatePatient = async (req, res) => {
 // Get patient statistics
 const getPatientStats = async (req, res) => {
   try {
+    const scope = buildPatientAssignmentScope(req.user, 'p');
     const stats = await query(`
       SELECT 
         COUNT(*) as total_patients,
@@ -1378,21 +1390,23 @@ const getPatientStats = async (req, res) => {
         COUNT(CASE WHEN gender = 'FEMALE' THEN 1 END) as female_patients,
         COUNT(CASE WHEN gender = 'OTHER' THEN 1 END) as other_gender_patients,
         AVG(TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE())) as average_age
-      FROM patients 
+      FROM patients p
       WHERE deleted_at IS NULL
-    `);
+        ${scope.clause ? `AND ${scope.clause}` : ''}
+    `, scope.params);
 
     // Monthly new patients (last 12 months)
     const monthlyStats = await query(`
       SELECT 
         DATE_FORMAT(created_at, '%Y-%m') as month,
         COUNT(*) as new_patients
-      FROM patients 
+      FROM patients p
       WHERE deleted_at IS NULL 
         AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        ${scope.clause ? `AND ${scope.clause}` : ''}
       GROUP BY DATE_FORMAT(created_at, '%Y-%m')
       ORDER BY month ASC
-    `);
+    `, scope.params);
 
     res.json({
       success: true,

@@ -182,10 +182,11 @@ const getVisitSummaryReport = async (req, res) => {
     const reportQuery = `
       SELECT 
         ${groupByClause} as group_key,
-        COUNT(*) as total_visits,
+        COUNT(CASE WHEN v.status IN ('COMPLETED', 'DID_NOT_ATTEND') THEN 1 END) as total_visits,
         COUNT(CASE WHEN v.status = 'COMPLETED' THEN 1 END) as completed_visits,
         COUNT(CASE WHEN v.status = 'SCHEDULED' THEN 1 END) as scheduled_visits,
         COUNT(CASE WHEN v.status = 'CANCELLED' THEN 1 END) as cancelled_visits,
+        COUNT(CASE WHEN v.status = 'DID_NOT_ATTEND' THEN 1 END) as did_not_attend_visits,
         AVG(
           CASE
             WHEN v.status = 'COMPLETED' THEN TIMESTAMPDIFF(MINUTE, v.visit_date, v.updated_at)
@@ -231,7 +232,7 @@ const getVisitSummaryReport = async (req, res) => {
       SELECT 
         u.name as provider_name,
         u.role as provider_role,
-        COUNT(*) as total_visits,
+        COUNT(CASE WHEN v.status IN ('COMPLETED', 'DID_NOT_ATTEND') THEN 1 END) as total_visits,
         COUNT(CASE WHEN v.status = 'COMPLETED' THEN 1 END) as completed_visits,
         AVG(
           CASE
@@ -412,7 +413,7 @@ const getDashboardReport = async (req, res) => {
       SELECT 
         (SELECT COUNT(*) FROM patients WHERE deleted_at IS NULL) as total_patients,
         (SELECT COUNT(*) FROM patients WHERE status = 'ACTIVE' AND deleted_at IS NULL) as active_patients,
-        (SELECT COUNT(*) FROM visits WHERE visit_date >= ${dateFilter}) as period_visits,
+        (SELECT COUNT(*) FROM visits WHERE visit_date >= ${dateFilter} AND status IN ('COMPLETED', 'DID_NOT_ATTEND')) as period_visits,
         (SELECT COUNT(*) FROM visits WHERE visit_date >= ${dateFilter} AND status = 'COMPLETED') as completed_visits,
         (SELECT COUNT(*) FROM cases WHERE created_at >= ${dateFilter}) as period_cases,
         (SELECT COUNT(*) FROM cases WHERE status = 'VERIFIED') as verified_cases,
@@ -440,10 +441,11 @@ const getDashboardReport = async (req, res) => {
     const visitTrendsQuery = `
       SELECT 
         DATE_FORMAT(visit_date, '%Y-%m-%d') as date,
-        COUNT(*) as visits,
+        COUNT(CASE WHEN status IN ('COMPLETED', 'DID_NOT_ATTEND') THEN 1 END) as visits,
         COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed
       FROM visits 
       WHERE visit_date >= ${dateFilter}
+        AND status IN ('COMPLETED', 'DID_NOT_ATTEND')
       GROUP BY DATE_FORMAT(visit_date, '%Y-%m-%d')
       ORDER BY date ASC
     `;
@@ -457,6 +459,7 @@ const getDashboardReport = async (req, res) => {
         COUNT(*) as count
       FROM visits 
       WHERE visit_date >= ${dateFilter}
+        AND status IN ('COMPLETED', 'DID_NOT_ATTEND')
         AND procedure_type IS NOT NULL
         AND procedure_type != ''
       GROUP BY procedure_type
@@ -474,7 +477,7 @@ const getDashboardReport = async (req, res) => {
         COUNT(DISTINCT v.id) as visit_count,
         COUNT(DISTINCT c.id) as case_count
       FROM users u
-      LEFT JOIN visits v ON u.id = v.provider_id AND v.visit_date >= ${dateFilter}
+      LEFT JOIN visits v ON u.id = v.provider_id AND v.visit_date >= ${dateFilter} AND v.status IN ('COMPLETED', 'DID_NOT_ATTEND')
       LEFT JOIN cases c ON u.id = c.student_id AND c.created_at >= ${dateFilter}
       WHERE u.status = 'ACTIVE' AND u.department IS NOT NULL
       GROUP BY u.department

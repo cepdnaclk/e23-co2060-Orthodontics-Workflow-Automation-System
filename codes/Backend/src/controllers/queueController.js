@@ -31,12 +31,14 @@ const cleanupCompletedQueueEntries = async () => {
   );
 };
 
-const buildQueueScope = (user, alias = 'q') => {
-  if (GLOBAL_QUEUE_ROLES.has(user.role)) {
+const buildQueueScope = (user, alias = 'q', options = {}) => {
+  const forceAssignedScope = options.assignedOnly && (GLOBAL_QUEUE_ROLES.has(user.role) || LOCAL_QUEUE_ROLES.has(user.role));
+
+  if (GLOBAL_QUEUE_ROLES.has(user.role) && !forceAssignedScope) {
     return { clause: '', params: [] };
   }
 
-  if (LOCAL_QUEUE_ROLES.has(user.role)) {
+  if (LOCAL_QUEUE_ROLES.has(user.role) || forceAssignedScope) {
     return {
       clause: `
         AND EXISTS (
@@ -131,7 +133,7 @@ const getQueue = async (req, res) => {
       queryParams.push(priority);
     }
 
-    const scope = buildQueueScope(req.user, 'q');
+    const scope = buildQueueScope(req.user, 'q', { assignedOnly: req.query.scope === 'assigned' });
     whereClause += ` ${scope.clause}`;
     queryParams.push(...scope.params);
 

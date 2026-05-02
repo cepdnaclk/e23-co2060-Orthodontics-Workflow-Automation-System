@@ -1093,7 +1093,7 @@ export function PatientListPage() {
                       type="datetime-local"
                       value={createForm.registration_date}
                       onChange={(e) => setCreateForm((s) => ({ ...s, registration_date: e.target.value }))}
-                      className="flex-1"
+                      className="hide-native-date-picker flex-1"
                     />
                     <Button
                       type="button"
@@ -1124,7 +1124,7 @@ export function PatientListPage() {
                           };
                         })
                       }
-                      className="flex-1"
+                      className="hide-native-date-picker flex-1"
                       required
                     />
                     <Button
@@ -1256,7 +1256,7 @@ export function PatientListPage() {
                       type="datetime-local"
                       value={editForm.registration_date}
                       onChange={(e) => setEditForm((s) => ({ ...s, registration_date: e.target.value }))}
-                      className="flex-1"
+                      className="hide-native-date-picker flex-1"
                     />
                     <Button
                       type="button"
@@ -1287,7 +1287,7 @@ export function PatientListPage() {
                           };
                         })
                       }
-                      className="flex-1"
+                      className="hide-native-date-picker flex-1"
                     />
                     <Button
                       type="button"
