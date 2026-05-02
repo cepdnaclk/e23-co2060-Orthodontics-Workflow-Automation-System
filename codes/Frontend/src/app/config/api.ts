@@ -170,6 +170,7 @@ export const API_ENDPOINTS = {
     VISIT_SUMMARY: '/api/reports/visit-summary',
     INVENTORY_ALERTS: '/api/reports/inventory-alerts',
     DASHBOARD: '/api/reports/dashboard',
+    SUMMARY_PATIENTS: '/api/reports/summary-patients',
     AUDIT_LOGS: '/api/reports/audit-logs',
   },
 } as const;

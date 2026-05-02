@@ -946,6 +946,17 @@ export const apiService = {
     },
     inventoryAlerts: (alert_type?: string) =>
       apiClient.get<any>(`${API_ENDPOINTS.REPORTS.INVENTORY_ALERTS}${alert_type ? `?alert_type=${alert_type}` : ''}`),
+    summaryPatients: (params: {
+      metric: 'total_patients' | 'active_patients' | 'visits_in_period';
+      start_date?: string;
+      end_date?: string;
+    }) => {
+      const query = new URLSearchParams();
+      query.append('metric', params.metric);
+      if (params.start_date) query.append('start_date', params.start_date);
+      if (params.end_date) query.append('end_date', params.end_date);
+      return apiClient.get<any>(`${API_ENDPOINTS.REPORTS.SUMMARY_PATIENTS}?${query.toString()}`);
+    },
     auditLogs: (params?: {
       page?: number;
       limit?: number;

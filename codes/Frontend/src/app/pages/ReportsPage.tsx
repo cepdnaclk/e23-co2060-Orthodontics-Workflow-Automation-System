@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Card, Button, Badge, RefreshButton, cn } from '../components/UI';
-import { Activity, AlertTriangle, CalendarDays, Download, FileSpreadsheet, FileText, Package, Users } from 'lucide-react';
+import { Activity, AlertTriangle, CalendarDays, Download, FileSpreadsheet, FileText, Package, Users, X } from 'lucide-react';
 import {
   ResponsiveContainer,
   PieChart,
@@ -22,11 +22,27 @@ import { apiService } from '../services/api';
 type ReportPeriod = '24h' | '7d' | '30d' | '3m' | '6m' | '12m';
 type AlertType = 'all' | 'critical' | 'low_stock' | 'out_of_stock';
 type ExportFormat = 'pdf' | 'csv' | 'xlsx';
+type SummaryMetric = 'total_patients' | 'active_patients' | 'visits_in_period';
 
 type ExportSection = {
   title: string;
   headers: string[];
   rows: Array<Array<string | number>>;
+};
+
+type SummaryPatientRow = {
+  id: number;
+  patient_code: string;
+  first_name: string;
+  last_name: string;
+  gender: string;
+  status: string;
+  phone?: string | null;
+  email?: string | null;
+  created_at: string;
+  visit_count_in_period?: number;
+  first_visit_in_period?: string | null;
+  last_visit_in_period?: string | null;
 };
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
@@ -337,19 +353,41 @@ const StatCard = ({
   value,
   tone,
   icon: Icon,
+  active = false,
+  clickable = false,
+  onClick,
 }: {
   label: string;
   value: string | number;
   tone: string;
   icon: any;
+  active?: boolean;
+  clickable?: boolean;
+  onClick?: () => void;
 }) => (
-  <Card className="p-5">
-    <div className="flex items-center justify-between gap-3">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <Icon className={cn('h-5 w-5', tone)} />
-    </div>
-    <p className={cn('mt-2 text-3xl font-extrabold', tone)}>{value}</p>
-  </Card>
+  <button
+    type="button"
+    className={cn(
+      'w-full text-left',
+      clickable ? 'cursor-pointer' : 'cursor-default'
+    )}
+    onClick={onClick}
+    disabled={!clickable}
+  >
+    <Card
+      className={cn(
+        'p-5 transition-all',
+        clickable ? 'hover:-translate-y-0.5 hover:shadow-md' : '',
+        active ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-500">{label}</p>
+        <Icon className={cn('h-5 w-5', tone)} />
+      </div>
+      <p className={cn('mt-2 text-3xl font-extrabold', tone)}>{value}</p>
+    </Card>
+  </button>
 );
 
 export function ReportsPage() {
@@ -361,6 +399,10 @@ export function ReportsPage() {
   const [inventory, setInventory] = useState<any>(null);
   const [period, setPeriod] = useState<ReportPeriod>('30d');
   const [alertType, setAlertType] = useState<AlertType>('all');
+  const [selectedMetric, setSelectedMetric] = useState<SummaryMetric | null>(null);
+  const [summaryPatients, setSummaryPatients] = useState<SummaryPatientRow[]>([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   const loadReports = async () => {
     const dateRange = getDateRange(period);
@@ -389,6 +431,27 @@ export function ReportsPage() {
   useEffect(() => {
     loadReports();
   }, [period, alertType]);
+
+  const loadSummaryPatients = async (metric: SummaryMetric) => {
+    const dateRange = getDateRange(period);
+    setSelectedMetric(metric);
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const response = await apiService.reports.summaryPatients({ metric, ...dateRange });
+      setSummaryPatients(response.data?.patients || []);
+    } catch (err: any) {
+      setSummaryPatients([]);
+      setSummaryError(err?.message || 'Failed to load patient list');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedMetric) return;
+    loadSummaryPatients(selectedMetric);
+  }, [period]);
 
   const patientBreakdown = useMemo(() => {
     const totalPatients = Number(patient?.overview?.total_patients || 0);
@@ -559,6 +622,16 @@ export function ReportsPage() {
     Number(inventoryOverview.low_stock_count || 0);
   const totalVisits = visitTrends.reduce((sum, row) => sum + row.total, 0);
   const completedVisits = visitTrends.reduce((sum, row) => sum + row.completed, 0);
+  const summaryTitle = useMemo(() => {
+    if (selectedMetric === 'total_patients') return 'Patients Registered In Selected Period';
+    if (selectedMetric === 'active_patients') return 'Active Patients In Selected Period';
+    if (selectedMetric === 'visits_in_period') return 'Patients With Visits In Selected Period';
+    return '';
+  }, [selectedMetric]);
+  const showSummaryStatusColumn = selectedMetric !== 'active_patients' && selectedMetric !== null;
+  const summaryColumnCount = selectedMetric === 'visits_in_period'
+    ? (showSummaryStatusColumn ? 6 : 5)
+    : (showSummaryStatusColumn ? 4 : 3);
   const exportSections = useMemo<ExportSection[]>(() => [
     {
       title: 'Summary',
@@ -753,11 +826,103 @@ export function ReportsPage() {
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Patients" value={patient?.overview?.total_patients ?? 0} tone="text-slate-900" icon={Users} />
-        <StatCard label="Active Patients" value={patient?.overview?.active_patients ?? 0} tone="text-blue-600" icon={Activity} />
-        <StatCard label="Visits In Period" value={totalVisits} tone="text-emerald-600" icon={CalendarDays} />
+        <StatCard
+          label="Total Patients"
+          value={patient?.overview?.total_patients ?? 0}
+          tone="text-slate-900"
+          icon={Users}
+          clickable
+          active={selectedMetric === 'total_patients'}
+          onClick={() => loadSummaryPatients('total_patients')}
+        />
+        <StatCard
+          label="Active Patients"
+          value={patient?.overview?.active_patients ?? 0}
+          tone="text-blue-600"
+          icon={Activity}
+          clickable
+          active={selectedMetric === 'active_patients'}
+          onClick={() => loadSummaryPatients('active_patients')}
+        />
+        <StatCard
+          label="Visits In Period"
+          value={totalVisits}
+          tone="text-emerald-600"
+          icon={CalendarDays}
+          clickable
+          active={selectedMetric === 'visits_in_period'}
+          onClick={() => loadSummaryPatients('visits_in_period')}
+        />
         <StatCard label="Inventory Alerts" value={totalInventoryAlerts} tone="text-amber-600" icon={AlertTriangle} />
       </div>
+
+      {selectedMetric && (
+        <Card className="p-6">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h4 className="font-bold text-slate-900">{summaryTitle}</h4>
+              <p className="text-sm text-slate-500">
+                {summaryPatients.length} patient{summaryPatients.length === 1 ? '' : 's'} matched for the selected period.
+              </p>
+            </div>
+            <Button variant="secondary" size="icon" className="h-10 w-10" onClick={() => setSelectedMetric(null)} title="Close list" aria-label="Close list">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {summaryError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{summaryError}</div>}
+
+          <div className="max-h-[420px] overflow-y-auto rounded-xl border border-slate-100">
+            <table className="min-w-full text-left text-sm">
+              <thead className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Patient</th>
+                  <th className="px-4 py-3">Code</th>
+                  {showSummaryStatusColumn && <th className="px-4 py-3">Status</th>}
+                  <th className="px-4 py-3">Registered</th>
+                  {selectedMetric === 'visits_in_period' && <th className="px-4 py-3">Visits</th>}
+                  {selectedMetric === 'visits_in_period' && <th className="px-4 py-3">Latest Visit</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {summaryPatients.map((patientRow) => (
+                  <tr key={patientRow.id}>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-slate-900">{patientRow.first_name} {patientRow.last_name}</div>
+                      <div className="text-xs text-slate-500">{patientRow.phone || patientRow.email || '-'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">{patientRow.patient_code}</td>
+                    {showSummaryStatusColumn && (
+                      <td className="px-4 py-3">
+                        <Badge variant={patientRow.status === 'ACTIVE' ? 'success' : patientRow.status === 'CONSULTATION' ? 'blue' : 'neutral'}>
+                          {String(patientRow.status || '').replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                    )}
+                    <td className="px-4 py-3 text-slate-700">{String(patientRow.created_at || '').slice(0, 10) || '-'}</td>
+                    {selectedMetric === 'visits_in_period' && <td className="px-4 py-3 text-slate-700">{patientRow.visit_count_in_period ?? 0}</td>}
+                    {selectedMetric === 'visits_in_period' && <td className="px-4 py-3 text-slate-700">{patientRow.last_visit_in_period ? String(patientRow.last_visit_in_period).slice(0, 16).replace('T', ' ') : '-'}</td>}
+                  </tr>
+                ))}
+                {!summaryLoading && summaryPatients.length === 0 && (
+                  <tr>
+                    <td colSpan={summaryColumnCount} className="px-4 py-8 text-center text-sm text-slate-500">
+                      No patients found for this selection.
+                    </td>
+                  </tr>
+                )}
+                {summaryLoading && (
+                  <tr>
+                    <td colSpan={summaryColumnCount} className="px-4 py-8 text-center text-sm text-slate-500">
+                      Loading patient list...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <Card className="p-6 xl:col-span-2">
