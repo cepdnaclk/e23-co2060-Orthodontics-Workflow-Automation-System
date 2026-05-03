@@ -1260,6 +1260,13 @@ function PatientMaterialUsageTab({
     }
   };
 
+  const refreshMaterialsView = async (mode: 'active' | 'trashed' = viewMode) => {
+    await Promise.all([
+      loadRecords(mode),
+      canCreate ? loadInventoryOptions() : Promise.resolve()
+    ]);
+  };
+
   useEffect(() => {
     loadRecords(viewMode);
   }, [patientId, viewMode]);
@@ -1287,16 +1294,12 @@ function PatientMaterialUsageTab({
 
   const openCreateEditor = async () => {
     resetForm();
-    if (inventoryOptions.length === 0) {
-      await loadInventoryOptions();
-    }
+    await loadInventoryOptions();
     setEditorOpen(true);
   };
 
   const startEdit = async (record: any) => {
-    if (inventoryOptions.length === 0) {
-      await loadInventoryOptions();
-    }
+    await loadInventoryOptions();
     setEditingId(record.id);
     setInventoryItemId(String(record.inventory_item_id || ''));
     setQuantity(String(record.quantity || ''));
@@ -1381,7 +1384,7 @@ function PatientMaterialUsageTab({
 
       setEditorOpen(false);
       resetForm();
-      await loadRecords(viewMode);
+      await refreshMaterialsView(viewMode);
     } catch (error: any) {
       toast.error(error?.message || (editingId ? 'Failed to update patient material usage' : 'Failed to record patient material usage'));
     } finally {
@@ -1403,7 +1406,7 @@ function PatientMaterialUsageTab({
         try {
           await apiService.patientMaterials.delete(String(record.id), permanent);
           toast.success(permanent ? 'Patient material usage permanently deleted' : 'Patient material usage moved to recycle bin');
-          await loadRecords(viewMode);
+          await refreshMaterialsView(viewMode);
         } catch (error: any) {
           toast.error(error?.message || 'Failed to delete patient material usage');
           throw error;
@@ -1422,7 +1425,7 @@ function PatientMaterialUsageTab({
         try {
           await apiService.patientMaterials.restore(String(record.id));
           toast.success('Patient material usage restored');
-          await loadRecords(viewMode);
+          await refreshMaterialsView(viewMode);
         } catch (error: any) {
           toast.error(error?.message || 'Failed to restore patient material usage');
           throw error;
@@ -1459,8 +1462,8 @@ function PatientMaterialUsageTab({
           <RefreshButton
             size="sm"
             className="h-9 px-3 border-slate-300"
-            onClick={() => loadRecords(viewMode)}
-            loading={loading}
+            onClick={() => refreshMaterialsView(viewMode)}
+            loading={loading || inventoryLoading}
           />
           {canCreate && viewMode === 'active' && (
             <Button size="sm" className="flex items-center gap-2" onClick={openCreateEditor}>
