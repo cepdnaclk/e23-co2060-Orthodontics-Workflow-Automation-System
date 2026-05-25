@@ -964,7 +964,7 @@ const getPatients = async (req, res) => {
     const patientsWithStats = await Promise.all(
       patients.map(async (patient) => {
         const [visitCount, lastVisit] = await Promise.all([
-          query('SELECT COUNT(*) as count FROM visits WHERE patient_id = ? AND status = "COMPLETED"', [patient.id]),
+          query("SELECT COUNT(*) as count FROM visits WHERE patient_id = ? AND status = 'COMPLETED'", [patient.id]),
           query('SELECT visit_date FROM visits WHERE patient_id = ? ORDER BY visit_date DESC LIMIT 1', [patient.id])
         ]);
 
@@ -1305,8 +1305,8 @@ const deletePatient = async (req, res) => {
     // Keep the safeguard for any future non-admin delete flows.
     if (req.user.role !== 'ADMIN') {
       const [activeCases, upcomingVisits] = await Promise.all([
-        query('SELECT COUNT(*) as count FROM cases WHERE patient_id = ? AND status IN ("ASSIGNED", "PENDING_VERIFICATION")', [id]),
-        query('SELECT COUNT(*) as count FROM visits WHERE patient_id = ? AND visit_date > NOW() AND status != "CANCELLED"', [id])
+        query("SELECT COUNT(*) as count FROM cases WHERE patient_id = ? AND status IN ('ASSIGNED', 'PENDING_VERIFICATION')", [id]),
+        query("SELECT COUNT(*) as count FROM visits WHERE patient_id = ? AND visit_date > NOW() AND status != 'CANCELLED'", [id])
       ]);
 
       if (activeCases[0].count > 0 || upcomingVisits[0].count > 0) {
