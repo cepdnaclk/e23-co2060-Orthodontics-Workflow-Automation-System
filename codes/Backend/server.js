@@ -34,6 +34,7 @@ const reportRoutes = require('./src/routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.set('trust proxy', 1);
 const isQuietPollingRequest = (req, res) => (
   req.method === 'GET' &&
   req.originalUrl === '/api/patients/assignment-requests/pending' &&
@@ -75,6 +76,15 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/uploads', express.static(path.join(__dirname, 'src/uploads')));
 
 // Health check endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'OrthoFlow API is running',
+    health: '/health',
+    api: '/api'
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({
     success: true,
