@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const { buildMysqlSslConfig } = require('./mysqlSsl');
 require('dotenv').config();
 
 const dbConfig = {
@@ -13,7 +14,8 @@ const dbConfig = {
   charset: 'utf8mb4',
   // Keep DATE/DATETIME/TIMESTAMP values as DB strings to avoid timezone shifts
   // when API serializes Date objects to ISO strings.
-  dateStrings: true
+  dateStrings: true,
+  ssl: buildMysqlSslConfig()
 };
 
 // Create connection pool
