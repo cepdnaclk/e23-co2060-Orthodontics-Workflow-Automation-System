@@ -74,6 +74,12 @@ const normalizeRegistrationDateTime = (value) => {
     return `${dateOnly[1]} 00:00:00`;
   }
 
+  const slashDateOnly = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (slashDateOnly) {
+    const [, day, month, year] = slashDateOnly;
+    return `${year}-${month}-${day} 00:00:00`;
+  }
+
   const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) return null;
   const year = parsed.getFullYear();
@@ -83,6 +89,24 @@ const normalizeRegistrationDateTime = (value) => {
   const minute = String(parsed.getMinutes()).padStart(2, '0');
   const second = String(parsed.getSeconds()).padStart(2, '0');
   return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+};
+
+const normalizeDateOnlyInput = (value) => {
+  if (value === undefined || value === null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return raw;
+  }
+
+  const slash = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (slash) {
+    const [, day, month, year] = slash;
+    return `${year}-${month}-${day}`;
+  }
+
+  return null;
 };
 
 const normalizeDentalChartVersionRow = (row) => {
@@ -1113,6 +1137,16 @@ const createPatient = async (req, res) => {
       }
       patientData.date_of_birth = derivedDob;
     }
+    if (patientData.date_of_birth) {
+      const normalizedDob = normalizeDateOnlyInput(patientData.date_of_birth);
+      if (!normalizedDob) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid date_of_birth provided. Use DD/MM/YYYY or YYYY-MM-DD.'
+        });
+      }
+      patientData.date_of_birth = normalizedDob;
+    }
     delete patientData.age;
 
     if (patientData.registration_date) {
@@ -1201,6 +1235,16 @@ const updatePatient = async (req, res) => {
         });
       }
       updateData.date_of_birth = derivedDob;
+    }
+    if (updateData.date_of_birth) {
+      const normalizedDob = normalizeDateOnlyInput(updateData.date_of_birth);
+      if (!normalizedDob) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid date_of_birth provided. Use DD/MM/YYYY or YYYY-MM-DD.'
+        });
+      }
+      updateData.date_of_birth = normalizedDob;
     }
     delete updateData.age;
 

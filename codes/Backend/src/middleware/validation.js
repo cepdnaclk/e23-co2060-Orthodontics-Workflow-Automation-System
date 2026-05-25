@@ -3,6 +3,68 @@ const tenDigitPhone = Joi.string().pattern(/^\d{10}$/).messages({
   'string.pattern.base': 'Phone number must be exactly 10 digits'
 });
 
+const parseDateOnly = (value) => {
+  const raw = String(value || '').trim();
+  let year;
+  let month;
+  let day;
+
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const slash = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (iso) {
+    [, year, month, day] = iso;
+  } else if (slash) {
+    [, day, month, year] = slash;
+  } else {
+    return null;
+  }
+
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (
+    date.getUTCFullYear() !== Number(year) ||
+    date.getUTCMonth() + 1 !== Number(month) ||
+    date.getUTCDate() !== Number(day)
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
+const dateOnlySchema = Joi.string().custom((value, helpers) => {
+  const parsed = parseDateOnly(value);
+  if (!parsed) {
+    return helpers.error('date.format');
+  }
+
+  const today = new Date();
+  const todayOnly = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  if (parsed > todayOnly) {
+    return helpers.error('date.max');
+  }
+
+  return value;
+}).messages({
+  'date.format': 'Date must be in DD/MM/YYYY or YYYY-MM-DD format',
+  'date.max': 'Date cannot be in the future'
+});
+
+const registrationDateSchema = Joi.string().custom((value, helpers) => {
+  const raw = String(value || '').trim();
+  const dateTimeLocal = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(raw);
+  const sqlDateTime = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?$/.test(raw);
+  const dateOnly = Boolean(parseDateOnly(raw));
+
+  if (!dateTimeLocal && !sqlDateTime && !dateOnly) {
+    return helpers.error('date.format');
+  }
+
+  return value;
+}).messages({
+  'date.format': 'Registration date must be DD/MM/YYYY, YYYY-MM-DD, or YYYY-MM-DD HH:mm'
+});
+
 // Validation middleware factory
 const validate = (schema, property = 'body') => {
   return (req, res, next) => {
@@ -112,9 +174,7 @@ const schemas = {
       'string.min': 'Last name must be at least 2 characters long',
       'any.required': 'Last name is required'
     }),
-    date_of_birth: Joi.date().max('now').optional().messages({
-      'date.max': 'Date of birth cannot be in the future'
-    }),
+    date_of_birth: dateOnlySchema.optional(),
     age: Joi.number().integer().min(0).max(130).optional(),
     gender: Joi.string().valid('MALE', 'FEMALE', 'OTHER').required().messages({
       'any.only': 'Gender must be MALE, FEMALE, or OTHER',
@@ -122,7 +182,7 @@ const schemas = {
     }),
     address: Joi.string().max(1000).optional(),
     province: Joi.string().max(100).optional(),
-    registration_date: Joi.date().max('now').optional(),
+    registration_date: registrationDateSchema.optional(),
     phone: tenDigitPhone.optional(),
     email: Joi.string().email().optional(),
     emergency_contact_name: Joi.string().max(255).optional(),
@@ -134,8 +194,8 @@ const schemas = {
   updatePatient: Joi.object({
     first_name: Joi.string().min(2).max(255).optional(),
     last_name: Joi.string().min(2).max(255).optional(),
-    registration_date: Joi.date().max('now').optional(),
-    date_of_birth: Joi.date().max('now').optional(),
+    registration_date: registrationDateSchema.optional(),
+    date_of_birth: dateOnlySchema.optional(),
     age: Joi.number().integer().min(0).max(130).optional(),
     gender: Joi.string().valid('MALE', 'FEMALE', 'OTHER').optional(),
     address: Joi.string().max(1000).optional(),
