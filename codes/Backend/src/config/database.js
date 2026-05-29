@@ -226,6 +226,16 @@ const ensureAccessControlSchema = async () => {
   if (!documentColumnSet.has('deleted_by')) {
     await query('ALTER TABLE medical_documents ADD COLUMN deleted_by INT NULL DEFAULT NULL');
   }
+  if (!documentColumnSet.has('storage_provider')) {
+    await query("ALTER TABLE medical_documents ADD COLUMN storage_provider ENUM('local', 's3') NOT NULL DEFAULT 'local' AFTER file_path");
+  }
+  if (!documentColumnSet.has('storage_bucket')) {
+    await query('ALTER TABLE medical_documents ADD COLUMN storage_bucket VARCHAR(255) NULL AFTER storage_provider');
+  }
+  if (!documentColumnSet.has('storage_key')) {
+    await query('ALTER TABLE medical_documents ADD COLUMN storage_key VARCHAR(700) NULL AFTER storage_bucket');
+    await query('CREATE INDEX idx_medical_documents_storage_key ON medical_documents (storage_key(191))');
+  }
 
   const inventoryColumns = await query(`
     SELECT COLUMN_NAME
