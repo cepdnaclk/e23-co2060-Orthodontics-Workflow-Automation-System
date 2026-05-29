@@ -341,6 +341,7 @@ export function DocumentPortal({ patientId, canUpload, canDelete }: Props) {
                   size="sm"
                   onClick={() => setViewMode(viewMode === 'active' ? 'trashed' : 'active')}
                   disabled={loading}
+                  className={viewMode === 'active' ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : undefined}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   {viewMode === 'active' ? 'View Trash' : 'View Active'}
