@@ -17,6 +17,7 @@ type PatientRecord = {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  created_at?: string | null;
   status: 'ACTIVE' | 'COMPLETED' | 'CONSULTATION' | 'MAINTENANCE' | 'INACTIVE';
   display_status?: 'ACTIVE' | 'COMPLETED' | 'CONSULTATION' | 'MAINTENANCE' | 'INACTIVE';
   is_inactive?: boolean;
@@ -502,31 +503,32 @@ export function PatientListPage() {
     setCreateOpen(true);
   };
 
-  const openEditModal = async (patientId: number) => {
-    setSaving(true);
+  const buildEditFormFromPatient = (patient: Partial<PatientRecord>) => ({
+    first_name: patient.first_name || '',
+    last_name: patient.last_name || '',
+    registration_date: toDateTimeLocalValue(patient.created_at),
+    date_of_birth: patient.date_of_birth ? String(patient.date_of_birth).slice(0, 10) : '',
+    age: patient.age ? String(patient.age) : '',
+    gender: patient.gender || 'FEMALE',
+    phone: patient.phone || '',
+    email: patient.email || '',
+    address: patient.address || '',
+    province: patient.province || ''
+  });
+
+  const openEditModal = async (patient: PatientRecord) => {
+    setSelectedPatientId(patient.id);
+    setEditForm(buildEditFormFromPatient(patient));
+    setEditOpen(true);
     setError(null);
+
     try {
-      const response = await apiService.patients.getById(String(patientId));
-      const patient = response.data?.patient;
-      if (!patient) throw new Error('Patient details not found');
-      setSelectedPatientId(patientId);
-      setEditForm({
-        first_name: patient.first_name || '',
-        last_name: patient.last_name || '',
-        registration_date: toDateTimeLocalValue(patient.created_at),
-        date_of_birth: patient.date_of_birth ? String(patient.date_of_birth).slice(0, 10) : '',
-        age: patient.age ? String(patient.age) : '',
-        gender: patient.gender || 'FEMALE',
-        phone: patient.phone || '',
-        email: patient.email || '',
-        address: patient.address || '',
-        province: patient.province || ''
-      });
-      setEditOpen(true);
+      const response = await apiService.patients.getById(String(patient.id));
+      const detailedPatient = response.data?.patient;
+      if (!detailedPatient) throw new Error('Patient details not found');
+      setEditForm(buildEditFormFromPatient(detailedPatient));
     } catch (err: any) {
       setError(err?.message || 'Failed to load patient details');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -990,7 +992,7 @@ export function PatientListPage() {
                             className="h-10 min-w-[136px] rounded-xl border border-amber-200 bg-gradient-to-r from-amber-400 to-orange-400 px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(245,158,11,0.24)] transition-all duration-200 hover:-translate-y-0.5 hover:from-amber-500 hover:to-orange-500 hover:shadow-[0_14px_30px_rgba(245,158,11,0.3)] active:translate-y-0 focus:ring-amber-300"
                             onClick={(e) => {
                               e.stopPropagation();
-                              openEditModal(p.id);
+                              openEditModal(p);
                             }}
                           >
                             <Pencil className="mr-2 h-4 w-4" />
