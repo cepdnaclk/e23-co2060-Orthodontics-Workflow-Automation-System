@@ -1511,7 +1511,12 @@ function PatientMaterialUsageTab({
               {(canCreate || canDelete) && (
                 <div className="flex flex-wrap items-center gap-2">
                   {canCreate && viewMode === 'active' && (
-                    <Button variant="secondary" size="sm" className="h-9 px-3" onClick={() => startEdit(record)}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-9 border-blue-200 bg-blue-50 px-3 text-blue-700 hover:bg-blue-100"
+                      onClick={() => startEdit(record)}
+                    >
                       <Pencil className="w-4 h-4 mr-1" />
                       Edit
                     </Button>
@@ -2553,6 +2558,7 @@ function DiagnosisTab({
                 size="sm"
                 onClick={() => setViewMode(viewMode === 'active' ? 'trashed' : 'active')}
                 disabled={loading}
+                className={viewMode === 'active' ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : undefined}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 {viewMode === 'active' ? 'View Bin' : 'View Active'}
@@ -3003,6 +3009,7 @@ function TreatmentPlanNotesTab({
                 size="sm"
                 onClick={() => setViewMode(viewMode === 'active' ? 'trashed' : 'active')}
                 disabled={loading}
+                className={viewMode === 'active' ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : undefined}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 {viewMode === 'active' ? 'View Bin' : 'View Active'}
