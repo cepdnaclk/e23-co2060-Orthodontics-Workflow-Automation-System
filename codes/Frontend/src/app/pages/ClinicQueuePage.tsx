@@ -279,11 +279,11 @@ export function ClinicQueuePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
         {statCards.map((card) => (
-          <Card key={card.label} className="p-5">
-            <p className="text-sm font-medium text-gray-500">{card.label}</p>
-            <p className={cn('mt-2 text-3xl font-extrabold', card.className)}>{card.value}</p>
+          <Card key={card.label} className="min-h-[116px] p-5">
+            <p className="text-sm font-medium leading-tight text-gray-500">{card.label}</p>
+            <p className={cn('mt-2 text-3xl font-extrabold leading-none', card.className)}>{card.value}</p>
           </Card>
         ))}
       </div>
