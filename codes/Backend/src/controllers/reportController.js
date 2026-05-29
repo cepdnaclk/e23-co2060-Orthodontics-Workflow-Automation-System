@@ -67,7 +67,7 @@ const getPatientStatusReport = async (req, res) => {
         `;
         break;
       case 'month':
-        groupByClause = 'DATE_FORMAT(created_at, "%Y-%m")';
+        groupByClause = "DATE_FORMAT(created_at, '%Y-%m')";
         break;
       default:
         groupByClause = 'status';
@@ -158,16 +158,16 @@ const getVisitSummaryReport = async (req, res) => {
     let groupByClause;
     switch (group_by) {
       case 'hour':
-        groupByClause = 'DATE_FORMAT(visit_date, "%Y-%m-%d %H:00:00")';
+        groupByClause = "DATE_FORMAT(visit_date, '%Y-%m-%d %H:00:00')";
         break;
       case 'month':
-        groupByClause = 'DATE_FORMAT(visit_date, "%Y-%m")';
+        groupByClause = "DATE_FORMAT(visit_date, '%Y-%m')";
         break;
       case 'week':
-        groupByClause = 'DATE_FORMAT(DATE_SUB(visit_date, INTERVAL WEEKDAY(visit_date) DAY), "%Y-%m-%d")';
+        groupByClause = "DATE_FORMAT(DATE_SUB(visit_date, INTERVAL WEEKDAY(visit_date) DAY), '%Y-%m-%d')";
         break;
       case 'day':
-        groupByClause = 'DATE_FORMAT(visit_date, "%Y-%m-%d")';
+        groupByClause = "DATE_FORMAT(visit_date, '%Y-%m-%d')";
         break;
       case 'provider':
         groupByClause = 'u.name';
@@ -176,7 +176,7 @@ const getVisitSummaryReport = async (req, res) => {
         groupByClause = 'v.status';
         break;
       default:
-        groupByClause = 'DATE_FORMAT(visit_date, "%Y-%m")';
+        groupByClause = "DATE_FORMAT(visit_date, '%Y-%m')";
     }
 
     const reportQuery = `

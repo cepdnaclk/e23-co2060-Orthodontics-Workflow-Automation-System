@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED'] as const;
+const QUEUE_TIME_ZONE = 'Asia/Colombo';
 
 type QueueStatus = typeof QUEUE_STATUSES[number];
 
@@ -18,6 +19,7 @@ type QueueItem = {
   priority?: 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW';
   status: QueueStatus;
   arrival_time: string;
+  completion_time?: string | null;
   wait_time_minutes?: number;
   assigned_clinical_staff?: string | null;
 };
@@ -27,6 +29,49 @@ type PatientOption = {
   patient_code: string;
   first_name: string;
   last_name: string;
+};
+
+const parseQueueTimestamp = (value?: string | null) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+  const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const parsed = new Date(hasExplicitTimezone ? normalized : `${normalized}Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatQueueArrival = (value?: string | null) => {
+  const parsed = parseQueueTimestamp(value);
+  if (!parsed) return '-';
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: QUEUE_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(parsed).reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+};
+
+const formatWaitDuration = (item: QueueItem, now: Date) => {
+  const arrival = parseQueueTimestamp(item.arrival_time);
+  if (!arrival) return '-';
+
+  const endTime = item.status === 'COMPLETED'
+    ? parseQueueTimestamp(item.completion_time) || now
+    : now;
+  const elapsedSeconds = Math.max(0, Math.floor((endTime.getTime() - arrival.getTime()) / 1000));
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  return `${minutes} min ${String(seconds).padStart(2, '0')} sec`;
 };
 
 const STATUS_META: Record<QueueStatus, {
@@ -85,6 +130,7 @@ export function ClinicQueuePage() {
   const [statusMenuOpenId, setStatusMenuOpenId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QueueItem | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
 
   const role = user?.role || '';
   const canViewQueue = QUEUE_ROLES.includes(role);
@@ -127,6 +173,14 @@ export function ClinicQueuePage() {
   useEffect(() => {
     loadQueue();
   }, [role]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const filteredPatients = useMemo(() => {
     const term = patientSearch.trim().toLowerCase();
@@ -279,11 +333,11 @@ export function ClinicQueuePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
         {statCards.map((card) => (
-          <Card key={card.label} className="p-5">
-            <p className="text-sm font-medium text-gray-500">{card.label}</p>
-            <p className={cn('mt-2 text-3xl font-extrabold', card.className)}>{card.value}</p>
+          <Card key={card.label} className="min-h-[116px] p-5">
+            <p className="text-sm font-medium leading-tight text-gray-500">{card.label}</p>
+            <p className={cn('mt-2 text-3xl font-extrabold leading-none', card.className)}>{card.value}</p>
           </Card>
         ))}
       </div>
@@ -320,10 +374,10 @@ export function ClinicQueuePage() {
                   {item.assigned_clinical_staff || 'Unassigned'}
                 </td>
                 <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
-                  {item.wait_time_minutes != null ? Math.max(0, item.wait_time_minutes) : '-'} min
+                  {formatWaitDuration(item, currentTime)}
                 </td>
                 <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
-                  {String(item.arrival_time || '').slice(0, 16).replace('T', ' ')}
+                  {formatQueueArrival(item.arrival_time)}
                 </td>
                 {!isReadOnly && (
                   <td className="px-6 py-4 align-middle text-center whitespace-nowrap">

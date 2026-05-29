@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Badge, Button, Input } from './UI';
-import { AlertCircle, CheckCircle2, Download, Info, Loader2, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, Info, Loader2, RefreshCcw, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { toast } from 'sonner';
 
@@ -363,6 +363,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
   };
 
   const loadVersions = async (mode: 'active' | 'trashed' = versionsMode) => {
+    setVersions([]);
     setVersionsLoading(true);
     try {
       const canViewBin = role === 'ORTHODONTIST';
@@ -870,29 +871,35 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {canManageVersionBin && (
-                <div className="inline-flex rounded-md border border-gray-200 overflow-hidden">
-                  <button
-                    type="button"
-                    className={`px-3 h-9 text-xs ${versionsMode === 'active' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-                    onClick={() => {
-                      setVersionsMode('active');
-                      loadVersions('active');
-                    }}
-                  >
-                    Active
-                  </button>
-                  <button
-                    type="button"
-                    className={`px-3 h-9 text-xs border-l border-gray-200 ${versionsMode === 'trashed' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-                    onClick={() => {
-                      setVersionsMode('trashed');
-                      loadVersions('trashed');
-                    }}
-                  >
-                    Bin{versionsTrashCount > 0 ? ` (${versionsTrashCount})` : ''}
-                  </button>
-                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    const nextMode = versionsMode === 'active' ? 'trashed' : 'active';
+                    setVersionsMode(nextMode);
+                    loadVersions(nextMode);
+                  }}
+                  disabled={versionsLoading}
+                  className={versionsMode === 'active' ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : undefined}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  {versionsMode === 'active' ? 'View Trash' : 'View Active'}
+                  {versionsMode === 'active' && versionsTrashCount > 0 && (
+                    <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {versionsTrashCount}
+                    </span>
+                  )}
+                </Button>
               )}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => loadVersions(versionsMode)}
+                disabled={versionsLoading}
+              >
+                <RefreshCcw className={`w-4 h-4 mr-1 ${versionsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               {canEdit && versionsMode === 'active' && (
                 <Button size="sm" onClick={requestSaveAnnotatedVersion} disabled={savingVersion}>
                   <Save className="w-4 h-4 mr-1" />
@@ -924,6 +931,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
                     <Button
                       size="sm"
                       variant="secondary"
+                      className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
                       onClick={() => downloadVersion(version.id)}
                       disabled={downloadingVersionId === version.id}
                     >

@@ -207,6 +207,9 @@ CREATE TABLE medical_documents (
     uploaded_by INT NOT NULL,
     type ENUM('RADIOGRAPH', 'NOTE', 'SCAN', 'PHOTO') NOT NULL,
     file_path VARCHAR(500) NOT NULL,
+    storage_provider ENUM('local', 's3') NOT NULL DEFAULT 'local',
+    storage_bucket VARCHAR(255) NULL,
+    storage_key VARCHAR(700) NULL,
     original_filename VARCHAR(255) NOT NULL,
     file_size BIGINT NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
@@ -216,6 +219,7 @@ CREATE TABLE medical_documents (
     FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE RESTRICT,
     INDEX idx_patient_id (patient_id),
     INDEX idx_type (type),
+    INDEX idx_medical_documents_storage_key (storage_key(191)),
     INDEX idx_created_at (created_at)
 );
 
