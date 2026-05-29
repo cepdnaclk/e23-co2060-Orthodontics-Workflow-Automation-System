@@ -931,6 +931,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
                     <Button
                       size="sm"
                       variant="secondary"
+                      className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
                       onClick={() => downloadVersion(version.id)}
                       disabled={downloadingVersionId === version.id}
                     >

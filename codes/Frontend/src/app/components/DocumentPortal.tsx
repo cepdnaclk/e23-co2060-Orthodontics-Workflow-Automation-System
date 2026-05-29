@@ -388,6 +388,7 @@ export function DocumentPortal({ patientId, canUpload, canDelete }: Props) {
                     <Button
                       variant="secondary"
                       size="sm"
+                      className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
                       onClick={() => onDownload(doc.id)}
                       disabled={downloadingDocId === doc.id}
                     >
