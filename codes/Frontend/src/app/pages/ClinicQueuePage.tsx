@@ -18,6 +18,7 @@ type QueueItem = {
   priority?: 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW';
   status: QueueStatus;
   arrival_time: string;
+  completion_time?: string | null;
   wait_time_minutes?: number;
   assigned_clinical_staff?: string | null;
 };
@@ -42,7 +43,10 @@ const formatWaitDuration = (item: QueueItem, now: Date) => {
   const arrival = parseQueueTimestamp(item.arrival_time);
   if (!arrival) return '-';
 
-  const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - arrival.getTime()) / 1000));
+  const endTime = item.status === 'COMPLETED'
+    ? parseQueueTimestamp(item.completion_time) || now
+    : now;
+  const elapsedSeconds = Math.max(0, Math.floor((endTime.getTime() - arrival.getTime()) / 1000));
   const minutes = Math.floor(elapsedSeconds / 60);
   const seconds = elapsedSeconds % 60;
   return `${minutes} min ${String(seconds).padStart(2, '0')} sec`;
