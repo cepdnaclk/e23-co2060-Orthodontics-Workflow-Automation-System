@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 const QUEUE_STATUSES = ['IN_WAITING_ROOM', 'UNDER_CONSULTATION', 'UNDER_TREATMENT', 'COMPLETED'] as const;
+const QUEUE_TIME_ZONE = 'Asia/Colombo';
 
 type QueueStatus = typeof QUEUE_STATUSES[number];
 
@@ -35,8 +36,29 @@ const parseQueueTimestamp = (value?: string | null) => {
   const raw = String(value).trim();
   if (!raw) return null;
   const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
-  const parsed = new Date(normalized);
+  const hasExplicitTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const parsed = new Date(hasExplicitTimezone ? normalized : `${normalized}Z`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatQueueArrival = (value?: string | null) => {
+  const parsed = parseQueueTimestamp(value);
+  if (!parsed) return '-';
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: QUEUE_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(parsed).reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 };
 
 const formatWaitDuration = (item: QueueItem, now: Date) => {
@@ -355,7 +377,7 @@ export function ClinicQueuePage() {
                   {formatWaitDuration(item, currentTime)}
                 </td>
                 <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
-                  {String(item.arrival_time || '').slice(0, 16).replace('T', ' ')}
+                  {formatQueueArrival(item.arrival_time)}
                 </td>
                 {!isReadOnly && (
                   <td className="px-6 py-4 align-middle text-center whitespace-nowrap">
