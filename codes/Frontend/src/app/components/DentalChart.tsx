@@ -363,6 +363,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
   };
 
   const loadVersions = async (mode: 'active' | 'trashed' = versionsMode) => {
+    setVersions([]);
     setVersionsLoading(true);
     try {
       const canViewBin = role === 'ORTHODONTIST';
