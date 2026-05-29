@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, Badge, Button, Input } from './UI';
-import { AlertCircle, CheckCircle2, Download, Info, Loader2, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, Info, Loader2, RefreshCcw, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { toast } from 'sonner';
 
@@ -890,6 +890,15 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
                   )}
                 </Button>
               )}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => loadVersions(versionsMode)}
+                disabled={versionsLoading}
+              >
+                <RefreshCcw className={`w-4 h-4 mr-1 ${versionsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               {canEdit && versionsMode === 'active' && (
                 <Button size="sm" onClick={requestSaveAnnotatedVersion} disabled={savingVersion}>
                   <Save className="w-4 h-4 mr-1" />
