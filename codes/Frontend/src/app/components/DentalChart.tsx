@@ -870,28 +870,25 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {canManageVersionBin && (
-                <div className="inline-flex rounded-md border border-gray-200 overflow-hidden">
-                  <button
-                    type="button"
-                    className={`px-3 h-9 text-xs ${versionsMode === 'active' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-                    onClick={() => {
-                      setVersionsMode('active');
-                      loadVersions('active');
-                    }}
-                  >
-                    Active
-                  </button>
-                  <button
-                    type="button"
-                    className={`px-3 h-9 text-xs border-l border-gray-200 ${versionsMode === 'trashed' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-                    onClick={() => {
-                      setVersionsMode('trashed');
-                      loadVersions('trashed');
-                    }}
-                  >
-                    Bin{versionsTrashCount > 0 ? ` (${versionsTrashCount})` : ''}
-                  </button>
-                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    const nextMode = versionsMode === 'active' ? 'trashed' : 'active';
+                    setVersionsMode(nextMode);
+                    loadVersions(nextMode);
+                  }}
+                  disabled={versionsLoading}
+                  className={versionsMode === 'active' ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : undefined}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  {versionsMode === 'active' ? 'View Trash' : 'View Active'}
+                  {versionsMode === 'active' && versionsTrashCount > 0 && (
+                    <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {versionsTrashCount}
+                    </span>
+                  )}
+                </Button>
               )}
               {canEdit && versionsMode === 'active' && (
                 <Button size="sm" onClick={requestSaveAnnotatedVersion} disabled={savingVersion}>
