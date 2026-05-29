@@ -29,6 +29,25 @@ type PatientOption = {
   last_name: string;
 };
 
+const parseQueueTimestamp = (value?: string | null) => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+  const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatWaitDuration = (item: QueueItem, now: Date) => {
+  const arrival = parseQueueTimestamp(item.arrival_time);
+  if (!arrival) return '-';
+
+  const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - arrival.getTime()) / 1000));
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  return `${minutes} min ${String(seconds).padStart(2, '0')} sec`;
+};
+
 const STATUS_META: Record<QueueStatus, {
   label: string;
   shortLabel: string;
@@ -85,6 +104,7 @@ export function ClinicQueuePage() {
   const [statusMenuOpenId, setStatusMenuOpenId] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QueueItem | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
 
   const role = user?.role || '';
   const canViewQueue = QUEUE_ROLES.includes(role);
@@ -127,6 +147,14 @@ export function ClinicQueuePage() {
   useEffect(() => {
     loadQueue();
   }, [role]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const filteredPatients = useMemo(() => {
     const term = patientSearch.trim().toLowerCase();
@@ -320,7 +348,7 @@ export function ClinicQueuePage() {
                   {item.assigned_clinical_staff || 'Unassigned'}
                 </td>
                 <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
-                  {item.wait_time_minutes != null ? Math.max(0, item.wait_time_minutes) : '-'} min
+                  {formatWaitDuration(item, currentTime)}
                 </td>
                 <td className="px-6 py-4 align-middle text-gray-600 whitespace-nowrap">
                   {String(item.arrival_time || '').slice(0, 16).replace('T', ' ')}
