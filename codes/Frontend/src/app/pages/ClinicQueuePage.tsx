@@ -333,7 +333,7 @@ export function ClinicQueuePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         {statCards.map((card) => (
           <Card key={card.label} className="min-h-[116px] p-5">
             <p className="text-sm font-medium leading-tight text-gray-500">{card.label}</p>
