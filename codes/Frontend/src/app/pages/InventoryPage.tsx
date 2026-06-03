@@ -163,6 +163,8 @@ export function InventoryPage() {
     return 'warning';
   };
 
+  const alertLabel = (level: InventoryItem['alert_level']) => level.replace(/_/g, ' ');
+
   const resetEditor = () => {
     setEditingId(null);
     setNewItem(initialNewItem);
@@ -478,7 +480,7 @@ export function InventoryPage() {
                 <td className="px-6 py-4 text-gray-800 font-semibold">{item.quantity} {item.unit}</td>
                 <td className="px-6 py-4 text-gray-500">{item.minimum_threshold} {item.unit}</td>
                 {deletedMode === 'active' && (
-                  <td className="px-6 py-4"><Badge variant={alertVariant(item.alert_level) as any}>{item.alert_level}</Badge></td>
+                  <td className="px-6 py-4"><Badge variant={alertVariant(item.alert_level) as any}>{alertLabel(item.alert_level)}</Badge></td>
                 )}
                 <td className="px-6 py-4">
                   {canMutateInventory && deletedMode === 'active' ? (
