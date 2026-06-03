@@ -398,32 +398,24 @@ export function InventoryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Materials & Inventory</h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canMutateInventory && deletedMode === 'active' && (
             <Button className="flex items-center gap-2" onClick={openCreateEditor}>
               <Plus className="w-4 h-4" /> Add Material
             </Button>
           )}
-          <div className="inline-flex rounded-md border border-gray-200 overflow-hidden">
-            <button
-              type="button"
-              className={`px-3 h-10 text-sm ${deletedMode === 'active' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-              onClick={() => setDeletedMode('active')}
-            >
-              Active
-            </button>
-            <button
-              type="button"
-              className={`px-3 h-10 text-sm border-l border-gray-200 ${deletedMode === 'trashed' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'}`}
-              onClick={() => setDeletedMode('trashed')}
-            >
-              Recycle Bin
-            </button>
-          </div>
+          <Button
+            variant="secondary"
+            onClick={() => setDeletedMode(deletedMode === 'active' ? 'trashed' : 'active')}
+            className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 active:bg-blue-200"
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
+            {deletedMode === 'active' ? 'View Trash' : 'View Active'}
+          </Button>
           <RefreshButton onClick={loadInventory} loading={loading} />
         </div>
       </div>
