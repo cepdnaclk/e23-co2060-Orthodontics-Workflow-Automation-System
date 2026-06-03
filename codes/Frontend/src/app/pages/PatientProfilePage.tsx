@@ -509,15 +509,15 @@ function VisitsTab({
 
   return (
     <Card>
-      <Table>
+      <Table className="overflow-x-auto" tableClassName="min-w-[1040px]">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-100 text-left">
-            <th className="px-6 py-4 font-semibold text-gray-600">Date</th>
+            <th className="px-6 py-4 font-semibold text-gray-600 min-w-[150px]">Date</th>
             <th className="px-6 py-4 font-semibold text-gray-600">Type</th>
             <th className="px-6 py-4 font-semibold text-gray-600">Provider</th>
             <th className="px-6 py-4 font-semibold text-gray-600">Notes</th>
             <th className="px-6 py-4 font-semibold text-gray-600">Status</th>
-            {canManage && <th className="px-6 py-4 font-semibold text-gray-600">Reception Actions</th>}
+            {canManage && <th className="px-6 py-4 font-semibold text-gray-600 min-w-[240px]">Reception Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -528,7 +528,7 @@ function VisitsTab({
           )}
           {visits.map((v) => (
             <tr key={v.id} className="hover:bg-gray-50/50">
-              <td className="px-6 py-4 font-medium">{String(v.visit_date).slice(0, 16).replace('T', ' ')}</td>
+              <td className="px-6 py-4 font-medium whitespace-nowrap">{String(v.visit_date).slice(0, 16).replace('T', ' ')}</td>
               <td className="px-6 py-4"><Badge variant="blue">{v.procedure_type || 'Visit'}</Badge></td>
               <td className="px-6 py-4 text-gray-600">{v.provider_name || '-'}</td>
               <td className="px-6 py-4 text-gray-500 max-w-xs truncate">{v.notes || '-'}</td>
@@ -540,9 +540,9 @@ function VisitsTab({
               {canManage && (
                 <td className="px-6 py-4">
                   {v.status === 'SCHEDULED' ? (
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <Button
-                        size="sm"
+                        className="min-w-[112px] px-5 py-3 text-sm"
                         onClick={() => markVisit(v.id, 'COMPLETED')}
                         disabled={updatingId === v.id}
                       >
@@ -550,7 +550,7 @@ function VisitsTab({
                       </Button>
                       <Button
                         variant="danger"
-                        size="sm"
+                        className="min-w-[142px] px-5 py-3 text-sm"
                         onClick={() => markVisit(v.id, 'DID_NOT_ATTEND')}
                         disabled={updatingId === v.id}
                       >
