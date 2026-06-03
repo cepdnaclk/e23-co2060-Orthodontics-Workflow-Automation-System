@@ -48,6 +48,12 @@ SMTP sender email:
 Initial admin email:
 ```
 
+For the Dental Faculty production deployment, the preferred sender should be an official Dental Faculty address such as:
+
+```text
+no-reply@dental.pdn.ac.lk
+```
+
 Decide the production names:
 
 ```text
@@ -56,7 +62,7 @@ Backend service name: orthoflow-backend
 Frontend service name: orthoflow-frontend
 Aiven service name: orthoflow-mysql
 Cloudflare R2 bucket name: orthoflow-documents
-SMTP2GO sender/domain: stakeholder domain or approved sender email
+SMTP2GO sender/domain: dental.pdn.ac.lk or another stakeholder-approved sender domain
 ```
 
 ## 3. GitHub Repository
@@ -144,6 +150,20 @@ SMTP server
 SMTP port
 ```
 
+Recommended production sender for the Dental Faculty deployment:
+
+```text
+no-reply@dental.pdn.ac.lk
+```
+
+This sender must be approved by the Dental Faculty / University IT team. Ideally, SMTP2GO should verify the sender domain:
+
+```text
+dental.pdn.ac.lk
+```
+
+If SMTP2GO gives DNS records for SPF, DKIM, or DMARC, ask the University IT/DNS administrator to add those records for the `dental.pdn.ac.lk` domain or relevant subdomain.
+
 Recommended Render backend values:
 
 ```env
@@ -153,10 +173,19 @@ SMTP_PORT=2525
 SMTP_SECURE=false
 SMTP_USER=your_smtp2go_smtp_username
 SMTP_PASS=your_smtp2go_smtp_password
-SMTP_FROM=approved_sender_email
+SMTP_FROM=no-reply@dental.pdn.ac.lk
 ```
 
 Important: `SMTP_USER` and `SMTP_PASS` must be SMTP2GO SMTP credentials, not the SMTP2GO login password and not a Gmail password.
+
+Temporary testing note: while demonstrating or piloting before the Dental Faculty sender is ready, it is acceptable to use the previously working sender:
+
+```env
+SMTP_FROM=e23182@eng.pdn.ac.lk
+SMTP_USER=eng.pdn.ac.lk
+```
+
+Do not keep the temporary student/faculty sender as the final production sender. Move to `no-reply@dental.pdn.ac.lk` or another stakeholder-owned address before real production use.
 
 ## 6. Create Cloudflare R2 Storage
 
@@ -665,4 +694,3 @@ Before handing over:
 [ ] Backup/recovery responsibilities explained
 [ ] Monthly maintenance schedule agreed
 ```
-
