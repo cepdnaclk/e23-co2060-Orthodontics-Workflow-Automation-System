@@ -279,7 +279,7 @@ const buildDentalChartVersionPdf = ({ patient, version }) => {
       ].filter(Boolean).join(', ') || 'Healthy';
 
       lines.push(`${index + 1}. Tooth ${getDentalChartVersionToothLabel(row)} (${row.dentition || '-'} ${row.notation_x || '-'}/${row.notation_y || '-'})`);
-      lines.push(`   Status: ${row.status || 'HEALTHY'} | Flags: ${flags}`);
+      lines.push(`   Status: ${flags}`);
       lines.push(`   Pathology: ${row.pathology || '-'}`);
       lines.push(`   Treatment: ${row.treatment || '-'}`);
       lines.push(`   Annotated Date: ${row.event_date ? String(row.event_date).slice(0, 19).replace('T', ' ') : '-'}`);
@@ -367,7 +367,6 @@ const buildDentalChartVersionHtml = ({ patient, version }) => {
           <div class="notation"><span class="x">${escapeHtml(row.notation_x || '-')}</span><span class="slash">/</span><span class="y">${escapeHtml(row.notation_y || '-')}</span></div>
           <div class="tooth-icon">🦷</div>
           <div class="meta">Tooth: ${escapeHtml(getDentalChartVersionToothLabel(row))}</div>
-          <div class="meta">Status: ${escapeHtml(row.status || 'HEALTHY')}</div>
           <div class="flags">${escapeHtml(flags)}</div>
           <div class="text">Pathology: ${escapeHtml(row.pathology || '-')}</div>
           <div class="text">Treatment: ${escapeHtml(row.treatment || '-')}</div>
@@ -544,7 +543,7 @@ const buildPatientRecordExportPdf = ({ patient, history, dentalVersions, diagnos
             entry.is_treated ? 'Treated' : null,
             entry.is_missing ? 'Missing' : null
           ].filter(Boolean).join(', ') || 'Healthy';
-          lines.push(`   ${entryIndex + 1}. Tooth ${getDentalChartVersionToothLabel(entry)} | Status: ${entry.status || 'HEALTHY'} | Flags: ${flags}`);
+          lines.push(`   ${entryIndex + 1}. Tooth ${getDentalChartVersionToothLabel(entry)} | Status: ${flags}`);
           lines.push(`      Pathology: ${stringifyRecordValue(entry.pathology)}`);
           lines.push(`      Treatment: ${stringifyRecordValue(entry.treatment)}`);
           lines.push(`      Annotated Date: ${formatDateTime(entry.event_date)}`);
@@ -621,7 +620,6 @@ const buildPatientRecordExportHtml = ({ patient, history, dentalVersions, diagno
                 <div class="notation"><span class="x">${escapeHtml(row.notation_x || '-')}</span><span class="slash">/</span><span class="y">${escapeHtml(row.notation_y || '-')}</span></div>
                 <div class="tooth-icon">🦷</div>
                 <div class="meta">Tooth: ${escapeHtml(getDentalChartVersionToothLabel(row))}</div>
-                <div class="meta">Status: ${escapeHtml(row.status || 'HEALTHY')}</div>
                 <div class="flags">${escapeHtml(flags)}</div>
                 <div class="text">Pathology: ${escapeHtml(stringifyRecordValue(row.pathology))}</div>
                 <div class="text">Treatment: ${escapeHtml(stringifyRecordValue(row.treatment))}</div>
