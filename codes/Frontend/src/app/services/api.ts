@@ -101,6 +101,22 @@ class ApiClient {
     return Boolean(this.refreshToken) && !authEndpointsWithoutRefresh.has(endpoint);
   }
 
+  private async fetchWithTimeout(url: string, config: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, API_CONFIG.TIMEOUT);
+
+    try {
+      return await fetch(url, {
+        ...config,
+        signal: controller.signal,
+      });
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
   // Request helper
   private async request<T>(
     endpoint: string,
@@ -130,7 +146,7 @@ class ApiClient {
     }
 
     try {
-      const response = await fetch(url, config);
+      const response = await this.fetchWithTimeout(url, config);
       const data = await response.json();
 
       // Handle 401 Unauthorized - try refresh token
@@ -142,7 +158,7 @@ class ApiClient {
             ...config.headers,
             Authorization: `Bearer ${this.accessToken}`,
           };
-          const retryResponse = await fetch(url, config);
+          const retryResponse = await this.fetchWithTimeout(url, config);
           return await retryResponse.json();
         } else {
           // Refresh failed, clear tokens and redirect to login
@@ -162,6 +178,9 @@ class ApiClient {
       return data;
     } catch (error) {
       console.error('API Request Error:', error);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error('The server is taking too long to respond. If this is a free Render service, wait a moment and try again.');
+      }
       throw error;
     }
   }
@@ -182,7 +201,7 @@ class ApiClient {
 
   private async performRefreshAccessToken(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {
+      const response = await this.fetchWithTimeout(`${this.baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

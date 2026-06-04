@@ -569,7 +569,7 @@ const getAuditLogsReport = async (req, res) => {
 
     if (search) {
       const like = `%${String(search).trim()}%`;
-      whereClauses.push('(u.name LIKE ? OR u.email LIKE ? OR al.action LIKE ? OR al.entity_type LIKE ? OR IFNULL(al.ip_address, "") LIKE ?)');
+      whereClauses.push("(u.name LIKE ? OR u.email LIKE ? OR al.action LIKE ? OR al.entity_type LIKE ? OR IFNULL(al.ip_address, '') LIKE ?)");
       params.push(like, like, like, like, like);
     }
 

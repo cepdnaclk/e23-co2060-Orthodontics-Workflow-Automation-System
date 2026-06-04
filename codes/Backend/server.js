@@ -34,6 +34,7 @@ const reportRoutes = require('./src/routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+let server;
 app.set('trust proxy', 1);
 const isQuietPollingRequest = (req, res) => (
   req.method === 'GET' &&
@@ -157,20 +158,28 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
+const shutdown = (signal) => {
   stopAuditLogRetentionJob();
   stopAutoReminderJob();
-  console.log('SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
+  console.log(`${signal} received. Shutting down gracefully...`);
 
-process.on('SIGINT', () => {
-  stopAuditLogRetentionJob();
-  stopAutoReminderJob();
-  console.log('SIGINT received. Shutting down gracefully...');
-  process.exit(0);
-});
+  if (!server) {
+    process.exit(0);
+    return;
+  }
+
+  server.close(() => {
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    process.exit(0);
+  }, 10000).unref();
+};
+
+// Graceful shutdown
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 // Start server
 async function startServer() {
@@ -183,7 +192,7 @@ async function startServer() {
     
     const PORT = process.env.PORT || 3000;
     
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`
 🚀 OrthoFlow Backend Server Started Successfully!
 📍 Server: http://localhost:${PORT}

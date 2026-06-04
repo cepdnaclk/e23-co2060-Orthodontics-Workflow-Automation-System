@@ -880,7 +880,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
                     loadVersions(nextMode);
                   }}
                   disabled={versionsLoading}
-                  className={versionsMode === 'active' ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' : undefined}
+                  className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   {versionsMode === 'active' ? 'View Trash' : 'View Active'}

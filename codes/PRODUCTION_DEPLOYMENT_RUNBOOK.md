@@ -7,7 +7,7 @@ The current production stack is:
 - GitHub for source code
 - Render for backend and frontend hosting
 - Aiven for MySQL
-- SMTP2GO for email sending
+- SMTP2GO or Brevo for email sending
 - Cloudflare R2 for patient document storage
 - Google Cloud OAuth for Google Sign-In
 
@@ -48,6 +48,12 @@ SMTP sender email:
 Initial admin email:
 ```
 
+For the Dental Faculty production deployment, the preferred sender should be an official Dental Faculty address such as:
+
+```text
+no-reply@dental.pdn.ac.lk
+```
+
 Decide the production names:
 
 ```text
@@ -56,7 +62,8 @@ Backend service name: orthoflow-backend
 Frontend service name: orthoflow-frontend
 Aiven service name: orthoflow-mysql
 Cloudflare R2 bucket name: orthoflow-documents
-SMTP2GO sender/domain: stakeholder domain or approved sender email
+Email sender/domain: dental.pdn.ac.lk or another stakeholder-approved sender domain
+Email provider: SMTP2GO or Brevo
 ```
 
 ## 3. GitHub Repository
@@ -128,7 +135,25 @@ defaultdb
 
 The backend will create or update the required tables on startup.
 
-## 5. Create SMTP2GO Email Sending
+## 5. Create Email Sending
+
+OrthoFlow uses standard SMTP settings through Nodemailer. This means the backend can use either SMTP2GO or Brevo without changing application code. Choose one provider for the production deployment, then enter that provider's SMTP values in the Render backend environment variables.
+
+Recommended production sender for the Dental Faculty deployment:
+
+```text
+no-reply@dental.pdn.ac.lk
+```
+
+This sender must be approved by the Dental Faculty / University IT team. For the most professional and reliable production setup, verify the sender domain:
+
+```text
+dental.pdn.ac.lk
+```
+
+If the chosen email provider gives DNS records for SPF, DKIM, DMARC, or tracking, ask the University IT/DNS administrator to add those records for `dental.pdn.ac.lk` or the relevant subdomain.
+
+### Option A: SMTP2GO
 
 1. Go to SMTP2GO.
 2. Create an account using the stakeholder email.
@@ -153,10 +178,66 @@ SMTP_PORT=2525
 SMTP_SECURE=false
 SMTP_USER=your_smtp2go_smtp_username
 SMTP_PASS=your_smtp2go_smtp_password
-SMTP_FROM=approved_sender_email
+SMTP_FROM=no-reply@dental.pdn.ac.lk
 ```
 
 Important: `SMTP_USER` and `SMTP_PASS` must be SMTP2GO SMTP credentials, not the SMTP2GO login password and not a Gmail password.
+
+### Option B: Brevo
+
+1. Go to Brevo.
+2. Create an account using the stakeholder email.
+3. Open **Settings > Senders, domains, IPs**.
+4. Verify either the production sender domain or a temporary testing sender.
+5. Open **Settings > SMTP & API > SMTP**.
+6. Generate a Standard SMTP key.
+7. Copy:
+
+```text
+SMTP server
+SMTP login
+SMTP key/password
+```
+
+Recommended Render backend values:
+
+```env
+EMAIL_SIMULATION=false
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=2525
+SMTP_SECURE=false
+SMTP_USER=your_brevo_smtp_login
+SMTP_PASS=your_brevo_smtp_key
+SMTP_FROM=no-reply@dental.pdn.ac.lk
+```
+
+Brevo may show port `587` in its dashboard. If Render times out on `587`, use port `2525` with `SMTP_SECURE=false`. If `2525` does not work, try:
+
+```env
+SMTP_PORT=465
+SMTP_SECURE=true
+```
+
+Important: `SMTP_USER` must be the Brevo SMTP login, usually something like `xxxx@smtp-brevo.com`. `SMTP_PASS` must be the Brevo SMTP key, not the Brevo web login password, not a Gmail password, and not a Brevo API key.
+
+Do not enable Brevo SMTP key IP restrictions unless the deployment has fixed outbound IP addresses. Render free and basic deployments may not have a stable outbound IP.
+
+SMTP2GO temporary testing note: while demonstrating or piloting before the Dental Faculty sender is ready, it is acceptable to use the previously working SMTP2GO sender:
+
+```env
+SMTP_FROM=e23182@eng.pdn.ac.lk
+SMTP_USER=eng.pdn.ac.lk
+```
+
+For Brevo testing with a verified Gmail sender, use:
+
+```env
+SMTP_FROM=orthoflow97@gmail.com
+```
+
+For Brevo, keep `SMTP_USER` as the Brevo SMTP login even when `SMTP_FROM` is a Gmail address. Gmail and other public mailbox domains may appear to recipients through the provider's authenticated sending domain, with the Gmail address as the reply-to address. That is acceptable for testing, but not ideal for production.
+
+Do not keep a temporary student/faculty/personal sender as the final production sender. Move to `no-reply@dental.pdn.ac.lk` or another stakeholder-owned address before real production use.
 
 ## 6. Create Cloudflare R2 Storage
 
@@ -341,15 +422,17 @@ RATE_LIMIT_MAX_REQUESTS=100
 CORS_ORIGIN=https://orthoflow-frontend.onrender.com
 
 EMAIL_SIMULATION=false
-SMTP_HOST=mail.smtp2go.com
-SMTP_PORT=2525
+SMTP_HOST=chosen_email_provider_smtp_host
+SMTP_PORT=chosen_email_provider_smtp_port
 SMTP_SECURE=false
-SMTP_USER=your_smtp2go_smtp_username
-SMTP_PASS=your_smtp2go_smtp_password
+SMTP_USER=chosen_email_provider_smtp_username
+SMTP_PASS=chosen_email_provider_smtp_password_or_key
 SMTP_FROM=approved_sender_email
 
 LOG_LEVEL=info
 ```
+
+Use the SMTP2GO values from **Option A** or the Brevo values from **Option B**. Do not mix credentials between providers.
 
 Deploy the backend.
 
@@ -475,7 +558,7 @@ Run through these checks after deployment:
 [ ] Care team assignment works
 [ ] Clinic queue works
 [ ] Queue wait time shows Sri Lanka time correctly
-[ ] Password reset email sends through SMTP2GO
+[ ] Password reset email sends through the chosen email provider
 [ ] Patient document upload works
 [ ] Uploaded document appears in Cloudflare R2 bucket
 [ ] Uploaded document downloads after backend redeploy
@@ -539,7 +622,7 @@ Recommended stakeholder-controlled secure records:
 Render account owner
 Aiven account owner
 Cloudflare account owner
-SMTP2GO account owner
+Email provider account owner
 Google Cloud project owner
 GitHub repository owner
 Admin recovery email
@@ -556,7 +639,7 @@ Before final production handover, rotate secrets that were shared during develop
 Aiven MySQL password
 JWT_SECRET
 JWT_REFRESH_SECRET
-SMTP2GO SMTP password
+Email provider SMTP password/key
 Cloudflare R2 Access Key ID and Secret Access Key
 Google OAuth credentials if exposed
 Initial admin password
@@ -573,7 +656,7 @@ Recommended monthly checks:
 [ ] Render frontend service healthy
 [ ] Aiven MySQL storage usage
 [ ] Cloudflare R2 storage usage
-[ ] SMTP2GO email usage
+[ ] Email provider usage
 [ ] Password reset email still works
 [ ] Patient document upload/download still works
 [ ] Review audit logs
@@ -606,6 +689,32 @@ Fix:
 Use SMTP2GO SMTP username and SMTP password.
 Do not use the SMTP2GO web login password.
 ```
+
+### Brevo Connection Timeout
+
+Fix:
+
+```text
+Use SMTP_HOST=smtp-relay.brevo.com.
+Try SMTP_PORT=2525 and SMTP_SECURE=false first.
+If 2525 fails, try SMTP_PORT=465 and SMTP_SECURE=true.
+Restart the Render backend after changing env vars.
+```
+
+### Brevo Authentication or Sender Problems
+
+Fix:
+
+```text
+Use the Brevo SMTP login as SMTP_USER.
+Use a Brevo SMTP key as SMTP_PASS.
+Do not use the Brevo web login password.
+Do not use a Brevo API key as SMTP_PASS.
+Confirm SMTP_FROM is a verified sender in Brevo.
+Do not enable SMTP key IP restrictions unless Render has fixed outbound IPs.
+```
+
+If using a Gmail sender for testing, recipients may see a Brevo sending domain with the Gmail address as reply-to. For production, use a stakeholder-owned verified domain such as dental.pdn.ac.lk.
 
 ### R2 AccessDenied
 
@@ -658,11 +767,10 @@ Before handing over:
 [ ] All exposed development secrets are rotated
 [ ] Admin account password changed
 [ ] R2 upload/download verified
-[ ] SMTP2GO email verified
+[ ] Email sending verified
 [ ] Google Sign-In verified
 [ ] Aiven database verified
 [ ] Render backend and frontend verified
 [ ] Backup/recovery responsibilities explained
 [ ] Monthly maintenance schedule agreed
 ```
-
