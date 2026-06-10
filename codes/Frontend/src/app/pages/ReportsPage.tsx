@@ -376,16 +376,16 @@ const StatCard = ({
   >
     <Card
       className={cn(
-        'p-5 transition-all',
+        'min-h-[104px] p-4 transition-all',
         clickable ? 'hover:-translate-y-0.5 hover:shadow-md' : '',
         active ? 'ring-2 ring-blue-500 ring-offset-1' : ''
       )}
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-slate-500">{label}</p>
-        <Icon className={cn('h-5 w-5', tone)} />
+        <p className="text-xs font-medium leading-tight text-slate-500 sm:text-sm">{label}</p>
+        <Icon className={cn('h-4 w-4 shrink-0 sm:h-5 sm:w-5', tone)} />
       </div>
-      <p className={cn('mt-2 text-3xl font-extrabold', tone)}>{value}</p>
+      <p className={cn('mt-2 text-2xl font-extrabold leading-none sm:text-3xl', tone)}>{value}</p>
     </Card>
   </button>
 );
@@ -825,7 +825,7 @@ export function ReportsPage() {
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-4 gap-3">
         <StatCard
           label="Total Patients"
           value={patient?.overview?.total_patients ?? 0}
