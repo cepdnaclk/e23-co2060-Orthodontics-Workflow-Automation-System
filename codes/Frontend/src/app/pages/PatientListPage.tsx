@@ -265,6 +265,7 @@ export function PatientListPage() {
   const createBirthDateRef = useRef<HTMLInputElement | null>(null);
   const editRegistrationDateRef = useRef<HTMLInputElement | null>(null);
   const editBirthDateRef = useRef<HTMLInputElement | null>(null);
+  const editDetailsRequestRef = useRef(0);
 
   const openDateTimePicker = (input: HTMLInputElement | null) => {
     if (!input) return;
@@ -516,20 +517,33 @@ export function PatientListPage() {
     province: patient.province || ''
   });
 
-  const openEditModal = async (patient: PatientRecord) => {
+  const closeEditModal = () => {
+    editDetailsRequestRef.current += 1;
+    setEditOpen(false);
+  };
+
+  const openEditModal = (patient: PatientRecord) => {
+    const requestId = editDetailsRequestRef.current + 1;
+    editDetailsRequestRef.current = requestId;
     setSelectedPatientId(patient.id);
     setEditForm(buildEditFormFromPatient(patient));
     setEditOpen(true);
     setError(null);
 
-    try {
-      const response = await apiService.patients.getById(String(patient.id));
-      const detailedPatient = response.data?.patient;
-      if (!detailedPatient) throw new Error('Patient details not found');
-      setEditForm(buildEditFormFromPatient(detailedPatient));
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load patient details');
-    }
+    void (async () => {
+      try {
+        const response = await apiService.patients.getById(String(patient.id));
+        const detailedPatient = response.data?.patient;
+        if (!detailedPatient) throw new Error('Patient details not found');
+        if (editDetailsRequestRef.current === requestId) {
+          setEditForm(buildEditFormFromPatient(detailedPatient));
+        }
+      } catch (err: any) {
+        if (editDetailsRequestRef.current === requestId) {
+          setError(err?.message || 'Failed to load patient details');
+        }
+      }
+    })();
   };
 
   const handleEdit = async (e: React.FormEvent) => {
@@ -554,7 +568,7 @@ export function PatientListPage() {
         address: editForm.address || undefined,
         province: editForm.province || undefined
       });
-      setEditOpen(false);
+      closeEditModal();
       setSelectedPatientId(null);
       await loadPatients(searchTerm);
       await loadPatientCounts();
@@ -1225,7 +1239,7 @@ export function PatientListPage() {
                 variant="secondary"
                 size="icon"
                 className="h-10 w-10 border border-red-200 bg-red-50 text-red-600 hover:border-red-300 hover:bg-red-100 active:bg-red-200"
-                onClick={() => setEditOpen(false)}
+                onClick={closeEditModal}
                 disabled={saving}
               >
                 <X className="w-4 h-4" />
@@ -1363,7 +1377,7 @@ export function PatientListPage() {
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="secondary" onClick={() => setEditOpen(false)} disabled={saving}>
+                <Button type="button" variant="secondary" onClick={closeEditModal} disabled={saving}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={saving || !isEditPhoneValid}>

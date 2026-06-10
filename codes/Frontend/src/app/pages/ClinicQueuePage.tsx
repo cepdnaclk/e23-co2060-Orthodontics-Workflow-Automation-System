@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Badge, Button, Input, RefreshButton, Table, cn } from '../components/UI';
-import { CheckCircle2, ChevronDown, Clock, Plus, Search, Trash2, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ClipboardList, Clock, Stethoscope, Plus, Search, Timer, Trash2, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../components/ui/dropdown-menu';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -294,11 +294,11 @@ export function ClinicQueuePage() {
   );
 
   const statCards = [
-    { label: 'Total in Queue', value: stats?.total_in_queue ?? 0, className: 'text-gray-900' },
-    { label: 'Waiting', value: stats?.waiting_count ?? 0, className: STATUS_META.IN_WAITING_ROOM.text },
-    { label: 'Consultation', value: stats?.under_consultation_count ?? 0, className: STATUS_META.UNDER_CONSULTATION.text },
-    { label: 'Treatment', value: stats?.under_treatment_count ?? 0, className: STATUS_META.UNDER_TREATMENT.text },
-    { label: 'Completed', value: stats?.completed_count ?? 0, className: STATUS_META.COMPLETED.text },
+    { label: 'Total in Queue', value: stats?.total_in_queue ?? 0, className: 'text-gray-900', icon: ClipboardList },
+    { label: 'Waiting', value: stats?.waiting_count ?? 0, className: STATUS_META.IN_WAITING_ROOM.text, icon: Clock },
+    { label: 'Consultation', value: stats?.under_consultation_count ?? 0, className: STATUS_META.UNDER_CONSULTATION.text, icon: Stethoscope },
+    { label: 'Treatment', value: stats?.under_treatment_count ?? 0, className: STATUS_META.UNDER_TREATMENT.text, icon: Timer },
+    { label: 'Completed', value: stats?.completed_count ?? 0, className: STATUS_META.COMPLETED.text, icon: CheckCircle2 },
   ];
 
   if (!canViewQueue) {
@@ -333,11 +333,14 @@ export function ClinicQueuePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-5 gap-3">
         {statCards.map((card) => (
-          <Card key={card.label} className="min-h-[116px] p-5">
-            <p className="text-sm font-medium leading-tight text-gray-500">{card.label}</p>
-            <p className={cn('mt-2 text-3xl font-extrabold leading-none', card.className)}>{card.value}</p>
+          <Card key={card.label} className="min-h-[104px] p-4">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs font-medium leading-tight text-gray-500 sm:text-sm">{card.label}</p>
+              <card.icon className={cn('h-4 w-4 shrink-0 sm:h-5 sm:w-5', card.className)} />
+            </div>
+            <p className={cn('mt-2 text-2xl font-extrabold leading-none sm:text-3xl', card.className)}>{card.value}</p>
           </Card>
         ))}
       </div>

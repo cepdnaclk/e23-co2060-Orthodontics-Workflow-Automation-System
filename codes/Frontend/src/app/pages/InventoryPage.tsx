@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card, Badge, Button, Table, Input, RefreshButton } from '../components/UI';
-import { Plus, Search, Trash2, RotateCcw, Pencil, X, PackagePlus } from 'lucide-react';
+import { AlertTriangle, Package, PackageX, Plus, Search, Trash2, RotateCcw, Pencil, X, PackagePlus } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -430,18 +430,27 @@ export function InventoryPage() {
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <p className="text-sm text-gray-500">Total SKU Items</p>
-          <p className="text-2xl font-bold">{stats?.total_items ?? 0}</p>
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="min-h-[104px] p-4">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-medium leading-tight text-gray-500 sm:text-sm">Total SKU Items</p>
+            <Package className="h-4 w-4 shrink-0 text-gray-900 sm:h-5 sm:w-5" />
+          </div>
+          <p className="mt-2 text-2xl font-extrabold leading-none text-gray-900 sm:text-3xl">{stats?.total_items ?? 0}</p>
         </Card>
-        <Card className="p-6">
-          <p className="text-sm text-gray-500">Low Stock Alerts</p>
-          <p className="text-2xl font-bold text-amber-600">{stats?.low_stock ?? 0}</p>
+        <Card className="min-h-[104px] p-4">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-medium leading-tight text-gray-500 sm:text-sm">Low Stock Alerts</p>
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 sm:h-5 sm:w-5" />
+          </div>
+          <p className="mt-2 text-2xl font-extrabold leading-none text-amber-600 sm:text-3xl">{stats?.low_stock ?? 0}</p>
         </Card>
-        <Card className="p-6">
-          <p className="text-sm text-gray-500">Out of Stock</p>
-          <p className="text-2xl font-bold text-red-600">{stats?.out_of_stock ?? 0}</p>
+        <Card className="min-h-[104px] p-4">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-medium leading-tight text-gray-500 sm:text-sm">Out of Stock</p>
+            <PackageX className="h-4 w-4 shrink-0 text-red-600 sm:h-5 sm:w-5" />
+          </div>
+          <p className="mt-2 text-2xl font-extrabold leading-none text-red-600 sm:text-3xl">{stats?.out_of_stock ?? 0}</p>
         </Card>
       </div>
 
