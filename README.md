@@ -72,3 +72,23 @@ For future maintainers:
 5. Deploy the selected branch/commit through Render.
 
 For routine maintenance steps, see [Operations and Maintenance](docs/operations-maintenance.md).
+
+## Team
+
+- E/23/182, R.K. Kulasooriya, [email](mailto:e23182@eng.pdn.ac.lk)
+- E/23/292, K.S. Rambukkanage, [email](mailto:e23292@eng.pdn.ac.lk)
+- E/23/299, R.D.K.D. Ranasinghe, [email](mailto:e23299@eng.pdn.ac.lk)
+- E/23/302, T.G.D. Randeep, [email](mailto:e23302@eng.pdn.ac.lk)
+
+## Supervisors
+
+- Dr. Asitha Bandaranayake - [asithab@eng.pdn.ac.lk](mailto:asithab@eng.pdn.ac.lk)
+- Dr. H.S.K. Ratnatilake - [ksandamala2002@dental.pdn.ac.lk](mailto:ksandamala2002@dental.pdn.ac.lk)
+- Dr. D.D. Vithanachchi - [dinakad@dental.pdn.ac.lk](mailto:dinakad@dental.pdn.ac.lk)
+
+## Links
+
+- [Project Repository](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System)
+- [Project Page](https://cepdnaclk.github.io/e23-co2060-Orthodontics-Workflow-Automation-System)
+- [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
+- [University of Peradeniya](https://eng.pdn.ac.lk/)
