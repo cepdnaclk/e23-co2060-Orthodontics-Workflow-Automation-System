@@ -1,32 +1,50 @@
 # OrthoFlow Backend
 
-Express + MySQL backend for the current Orthodontics Workflow Automation System.
+Node.js and Express backend for the Orthodontics Workflow Automation System.
+
+## What the Backend Does
+
+The backend provides:
+
+- authentication and Google Sign-In verification
+- user, role, session, and password management
+- patient records and care-team assignment workflows
+- visits, reminders, and clinic queue management
+- dental chart data and graphical PDF generation
+- patient documents and file downloads
+- diagnosis, treatment notes, payment records, and material usage
+- inventory management
+- student case tracking
+- admin reports and audit logs
 
 ## Stack
 
-- Node.js
+- Node.js 20+
 - Express
-- MySQL via `mysql2`
+- MySQL through `mysql2`
 - JWT access and refresh tokens
 - Joi validation
 - Multer uploads
-- Nodemailer email delivery or simulation
+- Nodemailer SMTP email
+- Cloudflare R2 or another S3-compatible object store
+- Playwright/Chromium for dental chart PDF rendering
 
-## Run Locally
+## Local Development
 
-Recommended full-system startup is handled by `codes/start.sh`; see `codes/QUICK_DEPLOY.md`.
-
-For backend-only work:
+From this folder:
 
 ```bash
-cd codes/Backend
 npm install
 npm run bootstrap-db
 npm run ensure-admin
 npm run dev
 ```
 
-`Backend/.env` must exist before running these commands. There is no current `.env.example`; use the environment section below as the setup checklist for a new device.
+Default local backend URL:
+
+```text
+http://localhost:3000
+```
 
 Health check:
 
@@ -34,63 +52,11 @@ Health check:
 curl http://localhost:3000/health
 ```
 
-Important:
-
-- `npm run bootstrap-db` creates the configured database when it is missing or empty, applies `database-schema.sql`, and then applies runtime schema guards
-- `npm run bootstrap-db` refuses to initialize a non-empty unknown database that does not contain the OrthoFlow `users` table
-- `npm run ensure-admin` creates the configured admin account only when no active admin exists, unless run through `npm run reset-admin-password`
-- `npm run dev` currently runs `node server.js`
-- `npm run migrate` and `npm run seed` are manual reset/development scripts; `seed` clears application tables and should not be used as the normal new-device startup step
-
-## Environment
-
-Create or update `codes/Backend/.env` with the active local settings.
-
-Important variables:
-
-- `PORT`, `NODE_ENV`
-- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
-- `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_EXPIRE`, `JWT_REFRESH_EXPIRE`
-- `SESSION_TIMEOUT_SECONDS`
-- `GOOGLE_CLIENT_ID`
-- `EMAIL_SIMULATION`, `SMTP_*`
-- `AUDIT_LOG_RETENTION_*`
-- `UPLOAD_DIR`, `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES`
-- `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`
-- `CORS_ORIGIN`
-- `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_DEPARTMENT`, `SEED_ADMIN_PASSWORD`
-
-## API Roots
-
-- API index: `GET /api`
-- health: `GET /health`
-- auth: `/api/auth`
-- patients: `/api/patients`
-- visits: `/api/visits`
-- documents: `/api/documents`
-- clinical notes: `/api/clinical-notes`
-- queue: `/api/queue`
-- cases: `/api/cases`
-- inventory: `/api/inventory`
-- users: `/api/users`
-- reports: `/api/reports`
-
-## Current Behavior Highlights
-
-- DB connection test runs on startup
-- access-control schema checks run on startup
-- audit retention job starts with the server
-- automatic reminder job starts with the server
-- session inactivity timeout is enforced
-- Google Sign-In uses backend audience validation against `GOOGLE_CLIENT_ID`
-- inventory supports restore flow and transaction-safe deletion behavior
-- dental-chart version workflows support download and orthodontist-managed bin actions
-
 ## Scripts
 
 ```bash
-npm run dev
 npm start
+npm run dev
 npm run bootstrap-db
 npm run ensure-admin
 npm run reset-admin-password
@@ -98,23 +64,103 @@ npm run migrate
 npm run seed
 ```
 
-## Admin Account
+Use `bootstrap-db` and `ensure-admin` for normal setup.
 
-Admin setup is controlled by `SEED_ADMIN_*` values in `Backend/.env`.
+Use `migrate` and `seed` only for controlled development resets. They are not the normal production maintenance path.
 
-- `SEED_ADMIN_EMAIL` defaults to `admin@orthoflow.edu`
-- `SEED_ADMIN_NAME` defaults to `System Administrator`
-- `SEED_ADMIN_DEPARTMENT` defaults to `Orthodontics`
-- `SEED_ADMIN_PASSWORD` is used when provided
-- when `SEED_ADMIN_PASSWORD` is blank, a temporary password is generated, printed in the terminal, and emailed if SMTP/simulation settings allow it
+## Environment Variables
 
-## Notes
+Create `codes/Backend/.env` for local development. In Render, set the same values in the backend service environment.
 
-Playwright is listed as a backend dependency for visual dental-chart PDF exports. After dependency install, Chromium can be installed when full browser-backed rendering is needed:
+Main groups:
 
-```bash
-cd codes/Backend
-npx playwright install chromium
+- server: `PORT`, `NODE_ENV`
+- database: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL`, `DB_SSL_REJECT_UNAUTHORIZED`, `DB_SSL_CA`
+- admin seed: `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_DEPARTMENT`, `SEED_ADMIN_PASSWORD`
+- auth: `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_EXPIRE`, `JWT_REFRESH_EXPIRE`, `SESSION_TIMEOUT_SECONDS`
+- Google: `GOOGLE_CLIENT_ID`
+- file storage: `FILE_STORAGE_PROVIDER`, `UPLOAD_DIR`, `R2_*` or `S3_*`
+- email: `EMAIL_SIMULATION`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+- rate limiting and CORS: `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, `CORS_ORIGIN`
+- audit retention: `AUDIT_LOG_RETENTION_*`
+
+See `../../docs/environment-variables.md` for the full handover reference.
+
+## Database Behavior
+
+The backend connects to MySQL at startup and applies runtime schema guards from `src/config/database.js`.
+
+These guards are designed to safely add missing current-system tables and columns. They do not replace database backups.
+
+For cloud deployment, Aiven MySQL should be configured with SSL enabled:
+
+```env
+DB_SSL=true
+DB_SSL_REJECT_UNAUTHORIZED=true
+DB_SSL_CA=<aiven-ca-certificate>
 ```
 
-Fallback PDF behavior is used automatically if Chromium is unavailable.
+## File Storage
+
+Local development can use local disk storage.
+
+Production should use Cloudflare R2:
+
+```env
+FILE_STORAGE_PROVIDER=r2
+R2_BUCKET=orthoflow-documents
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=<access-key-id>
+R2_SECRET_ACCESS_KEY=<secret-access-key>
+R2_REGION=auto
+R2_FORCE_PATH_STYLE=true
+UPLOAD_DIR=/tmp/uploads
+```
+
+The backend stores object keys and metadata in MySQL. R2 stores the actual uploaded file bytes.
+
+## Email
+
+The backend sends emails through SMTP using Nodemailer.
+
+Supported provider examples:
+
+- SMTP2GO: `mail.smtp2go.com`, usually port `2525`
+- Brevo: `smtp-relay.brevo.com`, usually port `587`
+
+Set `EMAIL_SIMULATION=true` for local testing when real email should not be sent.
+
+## Docker Deployment
+
+Production backend deployment on Render should use Docker:
+
+```text
+codes/Backend/Dockerfile
+```
+
+The Docker image is based on Microsoft Playwright so Chromium is available for graphical dental chart PDF rendering.
+
+Render settings:
+
+- Runtime: Docker
+- Root directory: `codes/Backend`
+- Dockerfile path: `./Dockerfile`
+- Health check path: `/health`
+
+## API Roots
+
+- `GET /`
+- `GET /health`
+- `GET /api`
+- `/api/auth`
+- `/api/patients`
+- `/api/visits`
+- `/api/documents`
+- `/api/clinical-notes`
+- `/api/payment-records`
+- `/api/patient-materials`
+- `/api/queue`
+- `/api/cases`
+- `/api/inventory`
+- `/api/users`
+- `/api/reports`
