@@ -118,7 +118,7 @@ const router = createBrowserRouter([
       {
         path: "cases",
         element: (
-          <RequireRoles roles={['ADMIN', 'ORTHODONTIST', 'STUDENT']}>
+          <RequireRoles roles={['ADMIN', 'ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT']}>
             <StudentCasesPage />
           </RequireRoles>
         ),

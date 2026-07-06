@@ -290,10 +290,11 @@ export function PatientListPage() {
   const canManagePatientDirectory = user?.role === 'RECEPTION';
   const canDeletePatients = user?.role === 'ADMIN';
   const canOrthoAssignCareTeam = user?.role === 'ORTHODONTIST';
-  const canAssignCareTeam = ['RECEPTION', 'ORTHODONTIST'].includes(user?.role || '');
+  const canSurgeonAssignStudents = user?.role === 'DENTAL_SURGEON';
+  const canAssignCareTeam = ['RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON'].includes(user?.role || '');
   const canFilterByAssignedOrthodontist = ['ADMIN', 'RECEPTION', 'DENTAL_SURGEON', 'STUDENT', 'NURSE'].includes(user?.role || '');
   const canExportAssignedPatientRecord = ['ORTHODONTIST', 'DENTAL_SURGEON', 'STUDENT'].includes(user?.role || '');
-  const canShowAssignAction = canManagePatientDirectory ? canAssignCareTeam : canOrthoAssignCareTeam;
+  const canShowAssignAction = canAssignCareTeam;
 
   const loadPatients = async (
     search = '',
@@ -346,7 +347,9 @@ export function PatientListPage() {
   const loadAssignableStaff = async () => {
     if (!canAssignCareTeam) return;
     try {
-      const response = await apiService.patients.getAssignableStaff(['DENTAL_SURGEON', 'STUDENT']);
+      const response = await apiService.patients.getAssignableStaff(
+        canSurgeonAssignStudents ? ['STUDENT'] : ['DENTAL_SURGEON', 'STUDENT']
+      );
       const rows = response.data || [];
       setAssignableStaff(rows);
     } catch {
@@ -603,6 +606,8 @@ export function PatientListPage() {
       if (canOrthoAssignCareTeam) {
         setAssignSurgeonIds(surgeonIds);
         setAssignStudentIds(studentIds);
+      } else if (canSurgeonAssignStudents) {
+        setAssignStudentIds(studentIds);
       } else {
         setAssignOrthodontistIds(orthodontistIds);
         setAssignSurgeonIds(surgeonIds);
@@ -621,6 +626,10 @@ export function PatientListPage() {
           ...assignSurgeonIds.map((id) => ({ user_id: Number(id), assignment_role: 'DENTAL_SURGEON' as const })),
           ...assignStudentIds.map((id) => ({ user_id: Number(id), assignment_role: 'STUDENT' as const }))
         ]
+      : canSurgeonAssignStudents
+        ? [
+            ...assignStudentIds.map((id) => ({ user_id: Number(id), assignment_role: 'STUDENT' as const }))
+          ]
       : [
           ...assignOrthodontistIds.map((id) => ({ user_id: Number(id), assignment_role: 'ORTHODONTIST' as const })),
           ...assignSurgeonIds.map((id) => ({ user_id: Number(id), assignment_role: 'DENTAL_SURGEON' as const }))
@@ -1429,7 +1438,17 @@ export function PatientListPage() {
                     />
                   </>
                 )}
-                {!canOrthoAssignCareTeam && (
+                {canSurgeonAssignStudents && (
+                  <MultiSelectDropdown
+                    label="Assign Students"
+                    options={assignableStudents}
+                    selectedIds={assignStudentIds}
+                    onChange={setAssignStudentIds}
+                    placeholder="Select students"
+                    testIdPrefix="assign-students"
+                  />
+                )}
+                {!canOrthoAssignCareTeam && !canSurgeonAssignStudents && (
                   <>
                     <MultiSelectDropdown
                       label="Assign Orthodontists"

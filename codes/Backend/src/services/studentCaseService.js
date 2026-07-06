@@ -56,6 +56,7 @@ const ensureStudentCaseForAssignment = async ({
   patientId,
   studentId,
   supervisorId,
+  supervisorRole = 'ORTHODONTIST',
   assignedBy
 }) => {
   const existing = await query(
@@ -100,7 +101,7 @@ const ensureStudentCaseForAssignment = async ({
     caseId,
     patientId,
     actorId: assignedBy || supervisorId,
-    actorRole: 'ORTHODONTIST',
+    actorRole: supervisorRole,
     logType: 'ASSIGNED',
     title: 'Patient assigned to student',
     statusTo: 'ASSIGNED',
@@ -149,8 +150,8 @@ const hasActiveAssignmentForCaseUser = async (caseRow, user) => {
   if (user.role === 'STUDENT' && Number(caseRow.student_id) === Number(user.id)) {
     assignmentRole = 'STUDENT';
     ownerId = Number(caseRow.student_id);
-  } else if (user.role === 'ORTHODONTIST' && Number(caseRow.supervisor_id) === Number(user.id)) {
-    assignmentRole = 'ORTHODONTIST';
+  } else if (['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user.role) && Number(caseRow.supervisor_id) === Number(user.id)) {
+    assignmentRole = user.role;
     ownerId = Number(caseRow.supervisor_id);
   } else {
     return false;
