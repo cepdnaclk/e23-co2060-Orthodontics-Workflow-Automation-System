@@ -105,7 +105,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        'h-screen shrink-0 border-r border-gray-100 bg-white sticky top-0 flex flex-col transition-all duration-200',
+        'sticky top-0 flex h-full max-h-[100dvh] shrink-0 flex-col overflow-hidden border-r border-gray-100 bg-white transition-all duration-200',
         collapsed ? 'w-20' : 'w-64'
       )}
     >
@@ -144,7 +144,7 @@ export function Sidebar({
         </div>
       </div>
 
-      <nav className={cn('flex-1 space-y-1 py-4', collapsed ? 'px-2' : 'px-4')}>
+      <nav className={cn('orthoflow-scroll-region min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain py-4', collapsed ? 'px-2' : 'px-4')}>
         {mustChangePassword && (
           <div
             className={cn(
@@ -212,7 +212,7 @@ export function Topbar() {
   const { logout } = useAuth();
 
   return (
-    <header className="h-16 border-b border-gray-100 bg-white px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6">
       <div aria-hidden="true" />
 
       <div className="flex items-center">
