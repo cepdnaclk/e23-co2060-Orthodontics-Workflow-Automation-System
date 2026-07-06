@@ -556,6 +556,7 @@ Run through these checks after deployment:
 [ ] Reception can create patients
 [ ] Patient directory loads
 [ ] Care team assignment works
+[ ] Dental surgeon can assign an assigned patient to a student
 [ ] Clinic queue works
 [ ] Queue wait time shows Sri Lanka time correctly
 [ ] Password reset email sends through the chosen email provider
@@ -563,7 +564,10 @@ Run through these checks after deployment:
 [ ] Uploaded document appears in Cloudflare R2 bucket
 [ ] Uploaded document downloads after backend redeploy
 [ ] Dental chart can be edited
+[ ] Dental chart annotation popup stays open when Pathology/Treatment fields are focused on a phone-sized viewport
 [ ] Dental chart PDF downloads with graphics/colors
+[ ] Student case supervision works for orthodontists and dental surgeons
+[ ] Admin can delete a removed student case
 [ ] Reports page loads
 [ ] Audit log loads
 ```

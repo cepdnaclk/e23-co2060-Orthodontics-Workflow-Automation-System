@@ -1,6 +1,6 @@
 # OrthoFlow
 
-OrthoFlow is a web-based orthodontics workflow automation system for a teaching hospital or dental clinic environment. It supports patient registration, appointment/visit tracking, clinic queue management, dental charting, document uploads, treatment notes, payments, materials/inventory, student case tracking, reports, and audit logs.
+OrthoFlow is a web-based orthodontics workflow automation system for a teaching hospital or dental clinic environment. It supports patient registration, appointment/visit tracking, clinic queue management, dental charting, document uploads, treatment notes, payments, materials/inventory, supervised student case tracking, reports, and audit logs.
 
 The system is split into:
 
