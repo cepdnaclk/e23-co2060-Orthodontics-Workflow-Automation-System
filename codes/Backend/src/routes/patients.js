@@ -32,7 +32,7 @@ router.get('/orthodontists',
 
 // GET /api/patients/assignable-staff - Get assignable staff for patient care team
 router.get('/assignable-staff',
-  authorizeRoles('RECEPTION', 'ORTHODONTIST'),
+  authorizeRoles('RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON'),
   asyncHandler(patientController.getAssignableStaff)
 );
 
