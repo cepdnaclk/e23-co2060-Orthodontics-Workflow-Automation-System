@@ -123,14 +123,14 @@ function MultiSelectDropdown({
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const onClickOutside = (event: MouseEvent) => {
+    const onClickOutside = (event: PointerEvent) => {
       if (!rootRef.current) return;
       if (!rootRef.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
+    document.addEventListener('pointerdown', onClickOutside);
+    return () => document.removeEventListener('pointerdown', onClickOutside);
   }, []);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -159,12 +159,12 @@ function MultiSelectDropdown({
 
   return (
     <div ref={rootRef} className="relative">
-      <label className="block text-sm text-gray-600 mb-1">{label}</label>
+      <label className="mb-1 block text-sm font-medium text-gray-600">{label}</label>
       <button
         type="button"
         data-testid={`${testIdPrefix}-trigger`}
         aria-expanded={open}
-        className="h-11 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-between"
+        className="flex min-h-11 w-full touch-manipulation items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-left text-base focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
         onClick={() => setOpen((value) => !value)}
       >
         <span className="truncate">
@@ -185,7 +185,7 @@ function MultiSelectDropdown({
               placeholder="Search..."
             />
           </div>
-          <div className="max-h-56 overflow-y-auto p-1">
+          <div className="max-h-64 overflow-y-auto overscroll-contain p-1">
             {filteredOptions.length === 0 && (
               <p className="px-2 py-2 text-xs text-gray-500">No matching options.</p>
             )}
@@ -197,7 +197,7 @@ function MultiSelectDropdown({
                   key={id}
                   type="button"
                   data-testid={`${testIdPrefix}-option-${id}`}
-                  className={`w-full rounded px-2 py-2 text-left text-sm flex items-start gap-2 ${checked ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'}`}
+                  className={`flex min-h-11 w-full touch-manipulation items-start gap-2 rounded px-2 py-2 text-left text-base sm:text-sm ${checked ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'}`}
                   onClick={() => toggleOption(id)}
                 >
                   <input type="checkbox" readOnly checked={checked} className="mt-1" />
@@ -1399,11 +1399,11 @@ export function PatientListPage() {
       )}
 
       {assignOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-3xl max-h-[92vh] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h3 className="text-xl font-bold text-gray-900">
-                {canOrthoAssignCareTeam ? 'Assign Care Team' : 'Assign Care Team'}
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-2 sm:items-center sm:p-4">
+          <div className="max-h-[94dvh] w-full max-w-3xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4 sm:px-6">
+              <h3 className="text-lg font-bold text-gray-900 sm:text-xl">
+                {canSurgeonAssignStudents ? 'Assign Students' : 'Assign Care Team'}
               </h3>
               <Button
                 type="button"
@@ -1416,8 +1416,8 @@ export function PatientListPage() {
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <form className="max-h-[calc(92vh-81px)] overflow-y-auto px-8 py-8 space-y-6" onSubmit={handleAssign}>
-              <div className="min-h-[20rem] rounded-xl border border-purple-100 bg-purple-50/60 p-8 space-y-6">
+            <form className="max-h-[calc(94dvh-81px)] space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-8 sm:py-8" onSubmit={handleAssign}>
+              <div className="min-h-[14rem] space-y-6 rounded-xl border border-purple-100 bg-purple-50/60 p-4 sm:min-h-[20rem] sm:p-8">
                 {canOrthoAssignCareTeam && (
                   <>
                     <MultiSelectDropdown
@@ -1470,11 +1470,11 @@ export function PatientListPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="secondary" onClick={() => setAssignOpen(false)} disabled={saving}>
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setAssignOpen(false)} disabled={saving}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" className="w-full sm:w-auto" disabled={saving}>
                   {saving ? 'Saving...' : 'Update Assignments'}
                 </Button>
               </div>

@@ -153,6 +153,7 @@ export function StudentCasesPage() {
   const isStudent = user?.role === 'STUDENT';
   const isSupervisor = ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user?.role || '');
   const isAdmin = user?.role === 'ADMIN';
+  const roleLabel = isStudent ? 'Student workspace' : isSupervisor ? 'Supervisor workspace' : 'Case overview';
 
   const loadCases = async () => {
     setLoadingList(true);
@@ -255,6 +256,20 @@ export function StudentCasesPage() {
     { label: 'Pending Tasks', value: stats?.pending_tasks ?? 0, tone: 'text-amber-600', icon: Clock },
     { label: 'Overdue Tasks', value: stats?.overdue_tasks ?? 0, tone: 'text-red-600', icon: AlertTriangle }
   ]), [stats]);
+  const workflowSteps = useMemo(() => {
+    if (isStudent) {
+      return [
+        { label: 'Assigned', value: stats?.pending_tasks ?? 0, tone: 'border-amber-200 bg-amber-50 text-amber-800' },
+        { label: 'Complete', value: stats?.completed_tasks ?? 0, tone: 'border-blue-200 bg-blue-50 text-blue-800' },
+        { label: 'Reviewed', value: stats?.reviewed_tasks ?? 0, tone: 'border-emerald-200 bg-emerald-50 text-emerald-800' }
+      ];
+    }
+    return [
+      { label: 'Assign work', value: stats?.total_tasks ?? 0, tone: 'border-blue-200 bg-blue-50 text-blue-800' },
+      { label: 'Needs review', value: stats?.completed_tasks ?? 0, tone: 'border-indigo-200 bg-indigo-50 text-indigo-800' },
+      { label: 'Accepted', value: stats?.reviewed_tasks ?? 0, tone: 'border-emerald-200 bg-emerald-50 text-emerald-800' }
+    ];
+  }, [isStudent, stats]);
 
   const openConfirmDialog = (config: Omit<ConfirmationDialogState, 'open' | 'processing'>) => {
     setConfirmDialog({
@@ -300,8 +315,7 @@ export function StudentCasesPage() {
       });
       toast.success('Task assigned to student');
       setTaskForm({ title: '', description: '', deadline_at: '' });
-      await loadCases();
-      await loadCaseDetail(selectedCase.id);
+      await Promise.all([loadCases(), loadCaseDetail(selectedCase.id)]);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to assign task');
     } finally {
@@ -326,8 +340,7 @@ export function StudentCasesPage() {
         ...prev,
         [taskId]: { status: '', completion_notes: '' }
       }));
-      await loadCases();
-      await loadCaseDetail(selectedCase.id);
+      await Promise.all([loadCases(), loadCaseDetail(selectedCase.id)]);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to update task');
     } finally {
@@ -356,8 +369,7 @@ export function StudentCasesPage() {
         ...prev,
         [taskId]: { status: '', review_notes: '' }
       }));
-      await loadCases();
-      await loadCaseDetail(selectedCase.id);
+      await Promise.all([loadCases(), loadCaseDetail(selectedCase.id)]);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to review task');
     } finally {
@@ -378,8 +390,7 @@ export function StudentCasesPage() {
         try {
           await apiService.cases.deleteTask(String(caseId), String(taskId));
           toast.success('Task deleted');
-          await loadCases();
-          await loadCaseDetail(caseId);
+          await Promise.all([loadCases(), loadCaseDetail(caseId)]);
         } catch (err: any) {
           toast.error(err?.message || 'Failed to delete task');
           throw err;
@@ -418,10 +429,18 @@ export function StudentCasesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Student Case Management</h2>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{roleLabel}</p>
+          <h2 className="mt-1 text-2xl font-bold text-slate-900">Student Case Management</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            {isStudent
+              ? 'Track assigned clinical work, update progress, and keep notes ready for supervisor review.'
+              : isSupervisor
+                ? 'Assign focused tasks, review completed work, and keep each student case moving through a clear clinical workflow.'
+                : 'Review case status, task progress, and supervisor decisions across the student case record.'}
+          </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
@@ -446,9 +465,22 @@ export function StudentCasesPage() {
         </div>
       </div>
 
+      <Card className="p-4 sm:p-5">
+        <div className="grid gap-3 md:grid-cols-3">
+          {workflowSteps.map((step, index) => (
+            <div key={step.label} className={cn('rounded-xl border px-4 py-3', step.tone)}>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold">{index + 1}. {step.label}</p>
+                <span className="text-2xl font-black tabular-nums">{step.value}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {statsCards.map((item) => (
           <Card key={item.label} className="p-5">
             <div className="flex items-center justify-between gap-3">
@@ -466,7 +498,7 @@ export function StudentCasesPage() {
             <h3 className="font-bold text-slate-900">Accessible Cases</h3>
             <p className="text-xs text-slate-500">{rows.length} {rows.length === 1 ? 'case' : 'cases'} visible.</p>
           </div>
-          <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-5 md:grid-cols-2 xl:grid-cols-3">
             {loadingList && <div className="p-4 text-sm text-slate-500">Loading cases...</div>}
             {!loadingList && rows.length === 0 && <div className="p-4 text-sm text-slate-500">No student cases found.</div>}
             {rows.map((row) => {
@@ -484,7 +516,7 @@ export function StudentCasesPage() {
                     }
                   }}
                   className={cn(
-                    'cursor-pointer rounded-xl border px-5 py-5 text-left transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                    'touch-manipulation cursor-pointer rounded-xl border px-4 py-4 text-left transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:px-5 sm:py-5',
                     selectedCaseId === row.id
                       ? 'border-blue-200 bg-blue-50 shadow-sm ring-1 ring-inset ring-blue-100'
                       : studentRemoved
@@ -531,14 +563,14 @@ export function StudentCasesPage() {
         </Card>
 
           {!selectedCase && (
-            <Card className="p-6 text-sm text-slate-500">
+            <Card className="p-5 text-sm text-slate-500 sm:p-6">
               Select a case to view assigned tasks, deadlines, student completion state, and supervisor review.
             </Card>
           )}
 
           {selectedCase && (
             <>
-              <Card className="p-6">
+              <Card className="p-5 sm:p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
@@ -582,11 +614,14 @@ export function StudentCasesPage() {
               </Card>
 
               {isSupervisor && !selectedCaseStudentRemoved && (
-                <Card className="p-6">
+                <Card className="p-5 sm:p-6">
                   <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
                     <Plus className="h-5 w-5 text-blue-600" />
                     Assign New Task
                   </h4>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Give the student one clear action at a time. Reviewed tasks are archived below, so the active list stays focused.
+                  </p>
                   <div className="mt-5 space-y-4">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Task title</label>
@@ -597,7 +632,7 @@ export function StudentCasesPage() {
                       <textarea
                         value={taskForm.description}
                         onChange={(e) => setTaskForm((prev) => ({ ...prev, description: e.target.value }))}
-                        className="min-h-28 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="min-h-28 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                       />
                     </div>
                     <div className="space-y-1">
@@ -609,7 +644,7 @@ export function StudentCasesPage() {
                       />
                     </div>
                     <div className="flex justify-end">
-                      <Button onClick={assignTask} disabled={savingAssignment}>
+                      <Button className="w-full sm:w-auto" onClick={assignTask} disabled={savingAssignment}>
                         <Plus className="mr-2 h-4 w-4" />
                         {savingAssignment ? 'Assigning...' : 'Assign Task'}
                       </Button>
@@ -618,7 +653,7 @@ export function StudentCasesPage() {
                 </Card>
               )}
 
-              <Card className="p-6">
+              <Card className="p-5 sm:p-6">
                 <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
                   <ClipboardList className="h-5 w-5 text-blue-600" />
                   Task Progress
@@ -630,11 +665,11 @@ export function StudentCasesPage() {
                     </div>
                   )}
                   {activeTasks.map((task) => (
-                    <div key={task.id} className="rounded-xl border border-slate-200 p-4">
+                    <div key={task.id} className="rounded-xl border border-slate-200 p-4 sm:p-5">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-semibold text-slate-900">{task.title}</p>
+                            <p className="break-words font-semibold text-slate-900">{task.title}</p>
                             <Badge variant={taskVariant(task.status, task.is_overdue) as any}>
                               {task.is_overdue ? 'OVERDUE' : task.status}
                             </Badge>
@@ -650,6 +685,7 @@ export function StudentCasesPage() {
                           <div className="flex justify-end">
                             <Button
                               variant="danger"
+                              className="w-full sm:w-auto"
                               onClick={() => deleteTask(task.id, task.title)}
                               disabled={savingAssignment}
                             >
@@ -680,7 +716,7 @@ export function StudentCasesPage() {
                           <p className="text-sm font-semibold text-slate-900">Update your task progress</p>
                           <div className="mt-3 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto]">
                             <select
-                              className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
+                              className="min-h-11 rounded-md border border-gray-200 bg-white px-3 text-base sm:min-h-10 sm:text-sm"
                               value={taskUpdates[task.id]?.status || ''}
                               onChange={(e) => setTaskUpdates((prev) => ({
                                 ...prev,
@@ -704,11 +740,11 @@ export function StudentCasesPage() {
                                   completion_notes: e.target.value
                                 }
                               }))}
-                              className="min-h-24 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="min-h-24 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                               placeholder="Explain what was completed for this task."
                             />
                             <div className="flex items-end">
-                              <Button onClick={() => updateTask(task.id)} disabled={savingTask}>
+                              <Button className="w-full sm:w-auto" onClick={() => updateTask(task.id)} disabled={savingTask}>
                                 {savingTask ? 'Saving...' : 'Update Task'}
                               </Button>
                             </div>
@@ -721,7 +757,7 @@ export function StudentCasesPage() {
                           <p className="text-sm font-semibold text-slate-900">Supervisor review</p>
                           <div className="mt-3 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto]">
                             <select
-                              className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
+                              className="min-h-11 rounded-md border border-gray-200 bg-white px-3 text-base sm:min-h-10 sm:text-sm"
                               value={taskReviews[task.id]?.status || ''}
                               onChange={(e) => setTaskReviews((prev) => ({
                                 ...prev,
@@ -745,11 +781,11 @@ export function StudentCasesPage() {
                                   review_notes: e.target.value
                                 }
                               }))}
-                              className="min-h-24 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="min-h-24 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-base text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                               placeholder="Review the student’s work on this task."
                             />
                             <div className="flex items-end">
-                              <Button onClick={() => reviewTask(task.id)} disabled={savingReview}>
+                              <Button className="w-full sm:w-auto" onClick={() => reviewTask(task.id)} disabled={savingReview}>
                                 {savingReview ? 'Saving...' : 'Save Review'}
                               </Button>
                             </div>
@@ -762,7 +798,7 @@ export function StudentCasesPage() {
               </Card>
 
               {reviewedTasks.length > 0 && (
-                <Card className="p-6">
+                <Card className="p-5 sm:p-6">
                   <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
                     <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                     Reviewed Tasks
@@ -772,9 +808,9 @@ export function StudentCasesPage() {
                   </p>
                   <div className="mt-5 space-y-4">
                     {reviewedTasks.map((task) => (
-                      <div key={task.id} className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="font-semibold text-slate-900">{task.title}</p>
+                      <div key={task.id} className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 sm:p-5">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <p className="break-words font-semibold text-slate-900">{task.title}</p>
                           <Badge variant="success">REVIEWED</Badge>
                         </div>
                         <p className="mt-2 text-sm text-slate-600">{task.description || 'No description provided.'}</p>
@@ -802,7 +838,7 @@ export function StudentCasesPage() {
                 </Card>
               )}
 
-              <Card className="p-6">
+              <Card className="p-5 sm:p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h4 className="flex items-center gap-2 text-lg font-bold text-slate-900">
                     <BookOpen className="h-5 w-5 text-slate-600" />
