@@ -99,7 +99,7 @@ export function DashboardPage() {
   const snapshotRows = useMemo(() => {
     const role = String(user?.role || '');
 
-    if (role === 'ORTHODONTIST' || role === 'STUDENT') {
+    if (role === 'ORTHODONTIST' || role === 'DENTAL_SURGEON' || role === 'STUDENT') {
       return [
         { label: 'Student Cases', value: caseStats?.total_cases ?? 0 },
         { label: 'Pending Tasks', value: caseStats?.pending_tasks ?? 0 },

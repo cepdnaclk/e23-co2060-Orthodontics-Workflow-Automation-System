@@ -57,7 +57,7 @@ const buildScopedCaseFilter = (user) => {
     return { clause: '1=1', params: [] };
   }
 
-  if (user.role === 'ORTHODONTIST') {
+  if (['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user.role)) {
     return {
       clause: `
         c.supervisor_id = ?
@@ -66,11 +66,11 @@ const buildScopedCaseFilter = (user) => {
           FROM patient_assignments pa
           WHERE pa.patient_id = c.patient_id
             AND pa.user_id = ?
-            AND pa.assignment_role = 'ORTHODONTIST'
+            AND pa.assignment_role = ?
             AND pa.active = TRUE
         )
       `,
-      params: [user.id, user.id]
+      params: [user.id, user.id, user.role]
     };
   }
 
@@ -139,7 +139,7 @@ const loadCaseOrThrow = async (req, res) => {
 };
 
 const requireSupervisorRole = (req, res, caseRow) => {
-  if (req.user.role !== 'ORTHODONTIST') {
+  if (!['ORTHODONTIST', 'DENTAL_SURGEON'].includes(req.user.role)) {
     res.status(403).json({
       success: false,
       message: 'Only the assigned supervisor can perform this action'
@@ -388,10 +388,10 @@ const getCaseById = async (req, res) => {
 
 const createCase = async (req, res) => {
   try {
-    if (req.user.role !== 'ORTHODONTIST') {
+    if (!['ORTHODONTIST', 'DENTAL_SURGEON'].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Student cases are created from orthodontist assignments'
+        message: 'Student cases are created from supervisor assignments'
       });
     }
 
@@ -408,6 +408,7 @@ const createCase = async (req, res) => {
       patientId: Number(req.body.patient_id),
       studentId: Number(req.body.student_id),
       supervisorId: Number(req.user.id),
+      supervisorRole: req.user.role,
       assignedBy: Number(req.user.id)
     });
 

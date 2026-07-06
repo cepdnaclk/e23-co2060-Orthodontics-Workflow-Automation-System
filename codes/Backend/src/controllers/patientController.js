@@ -1495,12 +1495,14 @@ const getAssignableStaff = async (req, res) => {
       ? rawRoles.split(',').map((r) => r.trim().toUpperCase()).filter(Boolean)
       : [];
 
-    if (req.user.role === 'ORTHODONTIST') {
-      // Orthodontists can only assign surgeons/students.
-      const allowedForOrtho = new Set(['DENTAL_SURGEON', 'STUDENT']);
+    if (req.user.role === 'ORTHODONTIST' || req.user.role === 'DENTAL_SURGEON') {
+      const isOrthodontist = req.user.role === 'ORTHODONTIST';
+      const allowedForSupervisor = isOrthodontist
+        ? new Set(['DENTAL_SURGEON', 'STUDENT'])
+        : new Set(['STUDENT']);
       const effectiveRoles = requestedRoles.length
-        ? requestedRoles.filter((r) => allowedForOrtho.has(r))
-        : Array.from(allowedForOrtho);
+        ? requestedRoles.filter((r) => allowedForSupervisor.has(r))
+        : Array.from(allowedForSupervisor);
 
       if (!effectiveRoles.length) {
         return res.json({ success: true, data: [] });
@@ -1582,8 +1584,12 @@ const assignPatientMember = async (req, res) => {
     const allowedRoles = ['ORTHODONTIST', 'DENTAL_SURGEON', 'NURSE', 'STUDENT'];
     let manageableRoles = new Set(['ORTHODONTIST', 'DENTAL_SURGEON']);
 
-    if (req.user.role === 'ORTHODONTIST') {
-      const canAssignRoles = new Set(['DENTAL_SURGEON', 'STUDENT']);
+    if (req.user.role === 'ORTHODONTIST' || req.user.role === 'DENTAL_SURGEON') {
+      const isOrthodontist = req.user.role === 'ORTHODONTIST';
+      const canAssignRoles = isOrthodontist
+        ? new Set(['DENTAL_SURGEON', 'STUDENT'])
+        : new Set(['STUDENT']);
+      const ownAssignmentRole = isOrthodontist ? 'ORTHODONTIST' : 'DENTAL_SURGEON';
       manageableRoles = canAssignRoles;
 
       const scopeRows = await query(
@@ -1591,10 +1597,10 @@ const assignPatientMember = async (req, res) => {
          FROM patient_assignments
          WHERE patient_id = ?
            AND user_id = ?
-           AND assignment_role = 'ORTHODONTIST'
+           AND assignment_role = ?
            AND active = TRUE
          LIMIT 1`,
-        [patientId, req.user.id]
+        [patientId, req.user.id, ownAssignmentRole]
       );
 
       if (!scopeRows.length) {
@@ -1608,7 +1614,9 @@ const assignPatientMember = async (req, res) => {
       if (hasInvalidRole) {
         return res.status(403).json({
           success: false,
-          message: 'Orthodontists can only assign DENTAL_SURGEON or STUDENT'
+          message: isOrthodontist
+            ? 'Orthodontists can only assign DENTAL_SURGEON or STUDENT'
+            : 'Dental surgeons can only assign STUDENT'
         });
       }
     }
@@ -1681,6 +1689,15 @@ const assignPatientMember = async (req, res) => {
         skipped.push({ user_id, assignment_role, reason: 'already_assigned' });
         if (!desiredByRole.has(assignment_role)) desiredByRole.set(assignment_role, new Set());
         desiredByRole.get(assignment_role).add(user_id);
+        if (assignment_role === 'STUDENT' && ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(req.user.role)) {
+          await ensureStudentCaseForAssignment({
+            patientId: Number(patientId),
+            studentId: user_id,
+            supervisorId: Number(req.user.id),
+            supervisorRole: req.user.role,
+            assignedBy: Number(req.user.id)
+          });
+        }
         continue;
       }
 
@@ -1727,11 +1744,12 @@ const assignPatientMember = async (req, res) => {
         });
 
         created.push({ id: assignmentId, user_id, assignment_role });
-        if (assignment_role === 'STUDENT' && req.user.role === 'ORTHODONTIST') {
+        if (assignment_role === 'STUDENT' && ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(req.user.role)) {
           await ensureStudentCaseForAssignment({
             patientId: Number(patientId),
             studentId: user_id,
             supervisorId: Number(req.user.id),
+            supervisorRole: req.user.role,
             assignedBy: Number(req.user.id)
           });
         }

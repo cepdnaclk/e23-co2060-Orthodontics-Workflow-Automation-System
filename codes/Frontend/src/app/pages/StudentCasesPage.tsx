@@ -151,7 +151,7 @@ export function StudentCasesPage() {
   });
 
   const isStudent = user?.role === 'STUDENT';
-  const isSupervisor = user?.role === 'ORTHODONTIST';
+  const isSupervisor = ['ORTHODONTIST', 'DENTAL_SURGEON'].includes(user?.role || '');
   const isAdmin = user?.role === 'ADMIN';
 
   const loadCases = async () => {

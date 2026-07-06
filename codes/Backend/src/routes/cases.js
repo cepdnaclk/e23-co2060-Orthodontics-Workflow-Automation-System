@@ -29,6 +29,13 @@ router.get('/stats',
   asyncHandler(caseController.getCaseStats)
 );
 
+// GET /api/cases/students/:studentId - Get cases for a specific student
+router.get('/students/:studentId',
+  requirePermission(OBJECT_TYPES.PATIENT_TREATMENT, PERMISSIONS.READ),
+  validate(schemas.pagination, 'query'),
+  asyncHandler(caseController.getStudentCases)
+);
+
 // GET /api/cases/:id - Get single case by ID
 router.get('/:id', 
   requirePermission(OBJECT_TYPES.PATIENT_TREATMENT, PERMISSIONS.READ, { resolvePatientId: resolvePatientIdFromCaseId }),
@@ -94,13 +101,6 @@ router.delete('/:id/tasks/:taskId',
 router.delete('/:id', 
   requirePermission(OBJECT_TYPES.PATIENT_TREATMENT, PERMISSIONS.DELETE, { resolvePatientId: resolvePatientIdFromCaseId }),
   asyncHandler(caseController.deleteCase)
-);
-
-// GET /api/students/:studentId/cases - Get cases for a specific student
-router.get('/students/:studentId', 
-  requirePermission(OBJECT_TYPES.PATIENT_TREATMENT, PERMISSIONS.READ),
-  validate(schemas.pagination, 'query'),
-  asyncHandler(caseController.getStudentCases)
 );
 
 module.exports = router;
