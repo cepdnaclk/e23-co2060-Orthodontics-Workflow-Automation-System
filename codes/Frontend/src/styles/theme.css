@@ -182,6 +182,12 @@
   }
 }
 
+@layer utilities {
+  .orthoflow-scroll-region {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 .hide-native-date-picker::-webkit-calendar-picker-indicator {
   display: none;
   opacity: 0;
