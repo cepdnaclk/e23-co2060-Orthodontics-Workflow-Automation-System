@@ -63,7 +63,7 @@ The frontend is organized around route-based pages and reusable components. It s
 
 The system has been validated through local development checks, backend health checks, API workflow testing, frontend route verification, role-specific access checks, production deployment smoke testing, and repeated cloud deployment verification.
 
-Key verified workflows include login, Google Sign-In, patient registration, team assignment, visits, live queue updates, dental chart PDF generation, document upload and download, inventory changes, student case access, reports, audit-log filtering, and email-based password reset.
+Key verified workflows include login, Google Sign-In, patient registration, team assignment, visits, live queue updates, dental chart editing and PDF generation, document upload and download, inventory changes, orthodontist and dental surgeon student-case supervision, admin cleanup of removed student cases, reports, audit-log filtering, touch-device chart interaction checks, and email-based password reset.
 
 ## Conclusion
 

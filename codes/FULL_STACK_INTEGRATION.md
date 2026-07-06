@@ -106,6 +106,8 @@ Main routes:
 - `/admin/users`
 - `/admin/audit-logs`
 
+The Student Cases route is available to admins, orthodontists, dental surgeons, and students. Orthodontists can assign patients to dental surgeons and students; dental surgeons can assign their patients to students and supervise those student cases. Admins can monitor progress and delete removed student cases for cleanup, while task progress and review actions remain supervisor/student workflows.
+
 The frontend API base URL is read from:
 
 ```env

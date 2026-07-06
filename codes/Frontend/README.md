@@ -7,7 +7,7 @@ React and Vite frontend for the Orthodontics Workflow Automation System.
 The frontend provides the browser interface for:
 
 - login and Google Sign-In
-- role-aware navigation
+- role-aware navigation with touch-friendly controls for phone and tablet use
 - dashboard
 - patient directory and patient profile
 - visits and reception actions
@@ -15,7 +15,7 @@ The frontend provides the browser interface for:
 - documents and trash/restore workflows
 - diagnosis and treatment notes
 - clinic queue
-- student cases
+- student cases for students, orthodontist supervisors, dental surgeon supervisors, and admin cleanup
 - materials and inventory
 - user management, reports, and audit logs for admins
 
@@ -112,7 +112,7 @@ After changing `VITE_API_BASE_URL` or `VITE_GOOGLE_CLIENT_ID`, redeploy the fron
 - Admin: reports, user management, audit logs
 - Admin and nurse: materials/inventory
 - Admin, nurse, orthodontist, dental surgeon, student, reception: clinic queue
-- Admin, orthodontist, student: student cases
+- Admin, orthodontist, dental surgeon, student: student cases
 - Orthodontist and dental surgeon: request approvals
 
 The backend still enforces permissions. Frontend route gating is only the first layer of user experience.

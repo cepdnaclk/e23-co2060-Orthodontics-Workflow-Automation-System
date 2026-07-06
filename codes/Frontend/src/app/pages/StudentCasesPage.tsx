@@ -432,13 +432,6 @@ export function StudentCasesPage() {
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{roleLabel}</p>
           <h2 className="mt-1 text-2xl font-bold text-slate-900">Student Case Management</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            {isStudent
-              ? 'Track assigned clinical work, update progress, and keep notes ready for supervisor review.'
-              : isSupervisor
-                ? 'Assign focused tasks, review completed work, and keep each student case moving through a clear clinical workflow.'
-                : 'Review case status, task progress, and supervisor decisions across the student case record.'}
-          </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
           <div className="relative">
@@ -594,7 +587,7 @@ export function StudentCasesPage() {
                     <p className="font-semibold">
                       This patient has been removed from {selectedCase.student_name}. Delete this student case when it is no longer needed.
                     </p>
-                    {isSupervisor && (
+                    {(isSupervisor || isAdmin) && (
                       <Button variant="danger" onClick={() => deleteCase(selectedCase)} disabled={savingAssignment}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete Case
@@ -898,7 +891,7 @@ export function StudentCasesPage() {
 
               {isAdmin && (
                 <Card className="p-5 text-sm text-slate-600">
-                  Admin access is read-only for student task progress and supervisor review.
+                  Admin access is read-only for student task progress and supervisor review. Removed student cases can be deleted when cleanup is needed.
                 </Card>
               )}
             </>

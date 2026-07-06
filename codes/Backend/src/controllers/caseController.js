@@ -158,6 +158,14 @@ const requireSupervisorRole = (req, res, caseRow) => {
   return true;
 };
 
+const requireSupervisorOrAdminRole = (req, res, caseRow) => {
+  if (req.user.role === 'ADMIN') {
+    return true;
+  }
+
+  return requireSupervisorRole(req, res, caseRow);
+};
+
 const requireStudentRole = (req, res, caseRow) => {
   if (req.user.role !== 'STUDENT') {
     res.status(403).json({
@@ -676,7 +684,7 @@ const deleteCase = async (req, res) => {
   try {
     const caseRow = await loadCaseOrThrow(req, res);
     if (!caseRow) return;
-    if (!requireSupervisorRole(req, res, caseRow)) return;
+    if (!requireSupervisorOrAdminRole(req, res, caseRow)) return;
 
     if (caseRow.student_assignment_active) {
       return res.status(400).json({

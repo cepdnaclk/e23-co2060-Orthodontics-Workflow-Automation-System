@@ -170,6 +170,9 @@ After backend and frontend are deployed:
 5. Create or open a patient.
 6. Upload a document and download it.
 7. Save and download a dental chart PDF.
-8. Send a password reset email.
-9. Check audit logs as admin.
-10. Confirm Render logs show no repeated errors.
+8. On a phone-sized viewport, open the dental chart annotation popup and focus the Pathology/Treatment fields.
+9. Confirm student case assignment/supervision works for orthodontists and dental surgeons.
+10. Confirm admin can delete a removed student case.
+11. Send a password reset email.
+12. Check audit logs as admin.
+13. Confirm Render logs show no repeated errors.

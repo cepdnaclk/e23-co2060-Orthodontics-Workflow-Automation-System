@@ -17,7 +17,7 @@ The system helps the clinic manage:
 - payment records
 - materials used per patient
 - materials and inventory stock
-- student case management
+- student case management for students, orthodontist supervisors, dental surgeon supervisors, and admin cleanup
 - reports and analytics
 - audit logs for system activity
 
@@ -32,6 +32,8 @@ codes/Frontend
 ```
 
 Users interact with patients, visits, documents, charts, reports, and settings through this frontend.
+
+The frontend includes responsive layout and touch-friendly controls for common phone and tablet workflows, including dental chart annotation popups and student case management.
 
 ### Backend
 
@@ -56,4 +58,3 @@ The backend sends system emails using SMTP. SMTP2GO and Brevo are both supported
 ## Important Production Note
 
 The backend should be deployed with Docker in production. Dental chart PDF generation depends on Playwright/Chromium, and the Docker image includes the needed browser dependencies.
-
