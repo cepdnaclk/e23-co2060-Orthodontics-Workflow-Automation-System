@@ -310,6 +310,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
     top: 0
   });
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [compactToothPopover, setCompactToothPopover] = useState(false);
   const dragStateRef = useRef<{ dragging: boolean; offsetX: number; offsetY: number; moved: boolean; startX: number; startY: number }>({
     dragging: false,
     offsetX: 0,
