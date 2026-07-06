@@ -88,7 +88,7 @@ router.get('/:id/assignments',
 
 // POST /api/patients/:id/assignments - Assign care-team member to patient
 router.post('/:id/assignments',
-  authorizeRoles('RECEPTION', 'ORTHODONTIST'),
+  authorizeRoles('RECEPTION', 'ORTHODONTIST', 'DENTAL_SURGEON'),
   validate(schemas.assignPatientMember),
   asyncHandler(patientController.assignPatientMember)
 );
