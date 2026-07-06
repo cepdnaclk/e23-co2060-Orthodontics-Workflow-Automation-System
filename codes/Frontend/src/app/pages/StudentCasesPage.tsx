@@ -587,7 +587,7 @@ export function StudentCasesPage() {
                     <p className="font-semibold">
                       This patient has been removed from {selectedCase.student_name}. Delete this student case when it is no longer needed.
                     </p>
-                    {isSupervisor && (
+                    {(isSupervisor || isAdmin) && (
                       <Button variant="danger" onClick={() => deleteCase(selectedCase)} disabled={savingAssignment}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete Case
@@ -891,7 +891,7 @@ export function StudentCasesPage() {
 
               {isAdmin && (
                 <Card className="p-5 text-sm text-slate-600">
-                  Admin access is read-only for student task progress and supervisor review.
+                  Admin access is read-only for student task progress and supervisor review. Removed student cases can be deleted when cleanup is needed.
                 </Card>
               )}
             </>
