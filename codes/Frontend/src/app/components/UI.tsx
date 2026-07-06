@@ -96,8 +96,8 @@ export const Badge = ({ children, variant = 'neutral', className }: { children: 
   );
 };
 
-export const Card = ({ children, className }: { children: ReactNode, className?: string }) => (
-  <div className={cn('bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden', className)}>
+export const Card = ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden', className)} {...props}>
     {children}
   </div>
 );
