@@ -96,8 +96,8 @@ This documentation is written for future maintainers, technical officers, IT sta
 
 - [Local Development](local-development.md)
 - [Roles and Permissions](roles-and-permissions.md)
-- [Detailed Production Deployment Runbook](../codes/PRODUCTION_DEPLOYMENT_RUNBOOK.md)
-- [Cloudflare R2 Storage Notes](../codes/Backend/docs/cloudflare-r2-storage.md)
+- [Detailed Production Deployment Runbook](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System/blob/main/codes/PRODUCTION_DEPLOYMENT_RUNBOOK.md)
+- [Cloudflare R2 Storage Notes](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System/blob/main/codes/Backend/docs/cloudflare-r2-storage.md)
 
 ## Repository Layout
 
