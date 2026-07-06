@@ -432,13 +432,6 @@ export function StudentCasesPage() {
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{roleLabel}</p>
           <h2 className="mt-1 text-2xl font-bold text-slate-900">Student Case Management</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            {isStudent
-              ? 'Track assigned clinical work, update progress, and keep notes ready for supervisor review.'
-              : isSupervisor
-                ? 'Assign focused tasks, review completed work, and keep each student case moving through a clear clinical workflow.'
-                : 'Review case status, task progress, and supervisor decisions across the student case record.'}
-          </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
           <div className="relative">
