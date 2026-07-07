@@ -10,7 +10,8 @@
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
     "ensure-admin": "node scripts/ensure-admin.js",
-    "reset-admin-password": "node scripts/ensure-admin.js --reset-password"
+    "reset-admin-password": "node scripts/ensure-admin.js --reset-password",
+    "touch-regression": "node scripts/touch-regression.js"
   },
   "keywords": [
     "orthodontics",
