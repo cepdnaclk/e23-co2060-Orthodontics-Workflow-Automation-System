@@ -721,7 +721,7 @@ export function ReportsPage() {
   };
 
   return (
-    <div className="reports-print-root space-y-6">
+    <div className="reports-print-root min-w-0 max-w-full space-y-6">
       <style>
         {`
           @media print {
@@ -772,7 +772,7 @@ export function ReportsPage() {
           }
         `}
       </style>
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <h2 className="text-2xl font-bold text-slate-900">Analytics & Reports</h2>
         <div className="reports-print-controls flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
           <select
@@ -825,7 +825,7 @@ export function ReportsPage() {
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Total Patients"
           value={patient?.overview?.total_patients ?? 0}
@@ -948,9 +948,9 @@ export function ReportsPage() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="min-w-0 p-6">
           <h4 className="font-bold text-slate-900">Patient Status Distribution</h4>
-          <div className="mt-4 h-[250px]">
+          <div className="orthoflow-scroll-region mt-4 h-[250px] min-w-0 overflow-x-auto pb-2">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -972,7 +972,7 @@ export function ReportsPage() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 min-w-0 space-y-2">
             {patientBreakdown.length === 0 && !loading && <p className="text-sm text-slate-500">No patient status data.</p>}
             {patientBreakdown.map((status: any, index: number) => (
               <div key={status.name} className="flex items-center justify-between gap-3 text-sm text-slate-600">
@@ -995,7 +995,7 @@ export function ReportsPage() {
           </div>
           <Badge variant="success">{procedureBreakdown.length} procedure types</Badge>
         </div>
-        <div className="h-[290px] overflow-x-auto">
+        <div className="orthoflow-scroll-region h-[290px] overflow-x-auto pb-2">
           <div className="h-full min-w-[720px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={procedureBreakdown} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
@@ -1024,8 +1024,8 @@ export function ReportsPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="p-6">
           <h4 className="font-bold text-slate-900">Provider Workload</h4>
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+          <div className="orthoflow-scroll-region mt-4 overflow-x-auto pb-2">
+            <table className="min-w-[560px] text-left text-sm">
               <thead className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="py-3 pr-4">Provider</th>

@@ -137,6 +137,19 @@
 
   html {
     font-size: var(--font-size);
+    height: 100%;
+    width: 100%;
+  }
+
+  body,
+  #root {
+    min-height: 100%;
+    width: 100%;
+  }
+
+  body {
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   h1 {
@@ -185,6 +198,9 @@
 @layer utilities {
   .orthoflow-scroll-region {
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
+    touch-action: pan-x pan-y;
   }
 }
 

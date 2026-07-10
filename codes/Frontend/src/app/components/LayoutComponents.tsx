@@ -185,7 +185,10 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className={cn('border-t border-gray-100', collapsed ? 'p-3' : 'p-4')}>
+      <div
+        className={cn('border-t border-gray-100', collapsed ? 'p-3' : 'p-4')}
+        style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+      >
         <div
           className={cn(
             'bg-gray-50 rounded-lg',

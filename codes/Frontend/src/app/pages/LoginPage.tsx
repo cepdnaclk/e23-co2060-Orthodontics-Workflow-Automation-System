@@ -219,7 +219,7 @@ export function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+    <div className="orthoflow-scroll-region relative flex min-h-screen min-h-[100svh] min-h-[100dvh] items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4">
       {/* Background Layer */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(155%_105%_at_15%_0%,#fbfdff_0%,#e6f1ff_32%,#c7ddff_76%,#d1d3ff_100%)]" />
@@ -235,26 +235,26 @@ export function LoginPage() {
       </div>
 
       {/* Centered Login Portal Card */}
-      <Card className="relative z-10 w-full max-w-md p-8 rounded-[28px] shadow-2xl bg-white/95 backdrop-blur-sm animate-in fade-in zoom-in duration-500">
+      <Card className="relative z-10 my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-[28px] bg-white/95 p-5 shadow-2xl backdrop-blur-sm animate-in fade-in zoom-in duration-500 sm:p-8">
         <div className="pointer-events-none absolute inset-0 rounded-[28px] border-2 border-blue-600" />
-        <div className="text-center mb-8">
+        <div className="mb-5 text-center sm:mb-8">
           {/* Tooth Logo - Centered in Card */}
-          <div className="flex justify-center mb-6">
+          <div className="mb-4 flex justify-center sm:mb-6">
             <div
               ref={toothLogoRef}
-              className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-xl cursor-pointer transform-gpu transition-transform duration-300 hover:-translate-y-1.5 hover:scale-[1.06] active:scale-[0.97]"
+              className="flex h-16 w-16 transform-gpu cursor-pointer items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xl transition-transform duration-300 hover:-translate-y-1.5 hover:scale-[1.06] active:scale-[0.97] sm:h-20 sm:w-20 sm:rounded-3xl"
               onClick={playToothSwing}
               title="Click to swing"
             >
-              <ToothLogo className="w-14 h-14" />
+              <ToothLogo className="h-11 w-11 sm:h-14 sm:w-14" />
             </div>
           </div>
           
-          <h1 className="text-4xl font-black text-gray-900 tracking-tight">OrthoFlow</h1>
+          <h1 className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">OrthoFlow</h1>
           <p className="text-gray-500 mt-2 font-medium">University Dental Hospital Portal</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Email</label>
             <div className="relative">
@@ -332,7 +332,7 @@ export function LoginPage() {
           </div>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+        <div className="mt-5 border-t border-gray-100 pt-4 text-center sm:mt-8 sm:pt-6">
           <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-2">
             Authorized Personnel Only
           </p>
