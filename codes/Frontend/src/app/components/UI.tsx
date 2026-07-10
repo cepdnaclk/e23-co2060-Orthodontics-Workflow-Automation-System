@@ -113,7 +113,7 @@ export const Table = ({
   className?: string,
   tableClassName?: string
 }) => (
-  <div className={cn('w-full overflow-auto', className)}>
+  <div className={cn('orthoflow-scroll-region w-full max-w-full overflow-auto overscroll-contain', className)}>
     <table className={cn('min-w-full text-sm text-left border-collapse', tableClassName)}>
       {children}
     </table>
