@@ -471,7 +471,7 @@ const UserManagement: React.FC = () => {
   const inactiveUsers = users.filter((u) => u.status === 'INACTIVE').length;
 
   return (
-    <Box p={{ xs: 2, md: 3 }} sx={{ minWidth: 0, maxWidth: '100%' }}>
+    <Box p={{ xs: 2, md: 3 }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
         User Management
       </Typography>
@@ -482,7 +482,7 @@ const UserManagement: React.FC = () => {
         </Alert>
       )}
 
-      <Box display="flex" justifyContent="space-between" alignItems="center" gap={2} flexWrap="wrap" mb={2.5}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2.5}>
         <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
           <Typography variant="body2" sx={{ color: '#334155', fontWeight: 600, px: 1.5, py: 0.6, borderRadius: '999px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0' }}>
             Total Users: {totalUsers}
@@ -593,15 +593,8 @@ const UserManagement: React.FC = () => {
       </Box>
 
       <Paper sx={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 26px rgba(15, 23, 42, 0.06)', overflow: 'hidden' }}>
-        <TableContainer sx={{
-          backgroundColor: '#ffffff',
-          maxWidth: '100%',
-          overflowX: 'auto',
-          overflowY: 'visible',
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehavior: 'contain'
-        }}>
-          <Table sx={{ minWidth: 1120 }}>
+        <TableContainer sx={{ backgroundColor: '#ffffff' }}>
+          <Table>
             <TableHead sx={{ backgroundColor: '#f8fafc' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#334155' }}>Name</TableCell>
