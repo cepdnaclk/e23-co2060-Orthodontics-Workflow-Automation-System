@@ -188,6 +188,30 @@
   }
 }
 
+@media (orientation: portrait) and (min-width: 700px) and (max-width: 1180px) and (pointer: coarse) {
+  .orthoflow-login-screen {
+    min-height: 100svh;
+    min-height: 100dvh;
+    padding-block: 0;
+  }
+
+  .orthoflow-login-card {
+    max-width: min(88vw, 36rem);
+    padding: 3rem;
+  }
+
+  .orthoflow-login-logo {
+    width: 6rem;
+    height: 6rem;
+    border-radius: 1.75rem;
+  }
+
+  .orthoflow-login-logo-icon {
+    width: 4.25rem;
+    height: 4.25rem;
+  }
+}
+
 .hide-native-date-picker::-webkit-calendar-picker-indicator {
   display: none;
   opacity: 0;

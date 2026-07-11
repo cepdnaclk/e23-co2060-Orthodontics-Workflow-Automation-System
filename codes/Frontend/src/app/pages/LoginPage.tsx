@@ -219,7 +219,7 @@ export function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+    <div className="orthoflow-login-screen min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
       {/* Background Layer */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(155%_105%_at_15%_0%,#fbfdff_0%,#e6f1ff_32%,#c7ddff_76%,#d1d3ff_100%)]" />
@@ -235,18 +235,18 @@ export function LoginPage() {
       </div>
 
       {/* Centered Login Portal Card */}
-      <Card className="relative z-10 w-full max-w-md p-8 rounded-[28px] shadow-2xl bg-white/95 backdrop-blur-sm animate-in fade-in zoom-in duration-500">
+      <Card className="orthoflow-login-card relative z-10 w-full max-w-md p-8 rounded-[28px] shadow-2xl bg-white/95 backdrop-blur-sm animate-in fade-in zoom-in duration-500">
         <div className="pointer-events-none absolute inset-0 rounded-[28px] border-2 border-blue-600" />
         <div className="text-center mb-8">
           {/* Tooth Logo - Centered in Card */}
           <div className="flex justify-center mb-6">
             <div
               ref={toothLogoRef}
-              className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-xl cursor-pointer transform-gpu transition-transform duration-300 hover:-translate-y-1.5 hover:scale-[1.06] active:scale-[0.97]"
+              className="orthoflow-login-logo w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-xl cursor-pointer transform-gpu transition-transform duration-300 hover:-translate-y-1.5 hover:scale-[1.06] active:scale-[0.97]"
               onClick={playToothSwing}
               title="Click to swing"
             >
-              <ToothLogo className="w-14 h-14" />
+              <ToothLogo className="orthoflow-login-logo-icon w-14 h-14" />
             </div>
           </div>
           
