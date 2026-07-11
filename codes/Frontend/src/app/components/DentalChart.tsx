@@ -58,6 +58,33 @@ const CONDITION_COLORS = {
   healthy: { stroke: '#cbd5e1', fill: '#ffffff' },
 };
 
+const SRI_LANKA_TIME_ZONE = 'Asia/Colombo';
+
+const formatSriLankaDateTime = (value?: string | null) => {
+  if (!value) return 'N/A';
+  const raw = String(value).trim();
+  if (!raw) return 'N/A';
+
+  const hasExplicitZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw);
+  const dateTimeLike = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(raw);
+  const parsed = new Date(dateTimeLike && !hasExplicitZone ? `${raw.replace(' ', 'T')}Z` : raw);
+
+  if (Number.isNaN(parsed.getTime())) return raw;
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SRI_LANKA_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(parsed);
+
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value || '';
+  return `${getPart('year')}-${getPart('month')}-${getPart('day')} ${getPart('hour')}:${getPart('minute')}`;
+};
+
 const getAdultToothType = (num: number): ToothType => {
   if ([1, 2, 3, 14, 15, 16, 17, 18, 19, 30, 31, 32].includes(num)) return 'molar';
   if ([4, 5, 12, 13, 20, 21, 28, 29].includes(num)) return 'premolar';
@@ -898,7 +925,6 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
             <div>
               <h5 className="text-sm font-bold text-slate-800">Annotated Chart Versions (Files)</h5>
-              <p className="text-xs text-slate-500">Saved chronologically. Each version records who annotated it.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {canManageVersionBin && (
@@ -954,7 +980,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{version.version_label}</p>
                   <p className="text-xs text-slate-500">
-                    {String(version.created_at).slice(0, 16).replace('T', ' ')} • {version.entry_count} annotated teeth • by {version.annotated_by_name || 'Unknown'}
+                    {formatSriLankaDateTime(version.created_at)} • {version.entry_count} annotated teeth • by {version.annotated_by_name || 'Unknown'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
