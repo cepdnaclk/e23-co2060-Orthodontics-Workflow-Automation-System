@@ -77,6 +77,22 @@ const formatSriLankaDateTime = (value, includeSeconds = false) => {
   return includeSeconds ? `${dateTime}:${getPart('second')}` : dateTime;
 };
 
+const formatDateOnlyValue = (value) => {
+  if (!value) return 'N/A';
+  const raw = String(value).trim();
+  const direct = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (direct) return direct[1];
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  return parsed.toISOString().slice(0, 10);
+};
+
+const formatDentalChartEntryAnnotatedAt = (row) => {
+  if (row?.updated_at) return formatSriLankaDateTime(row.updated_at, true);
+  if (row?.event_date) return formatDateOnlyValue(row.event_date);
+  return '-';
+};
+
 // Generate unique patient code
 const generatePatientCode = async () => {
   const prefix = 'P';
@@ -317,7 +333,7 @@ const buildDentalChartVersionPdf = ({ patient, version }) => {
       lines.push(`   Status: ${flags}`);
       lines.push(`   Pathology: ${row.pathology || '-'}`);
       lines.push(`   Treatment: ${row.treatment || '-'}`);
-      lines.push(`   Annotated Date: ${row.event_date ? formatSriLankaDateTime(row.event_date, true) : '-'}`);
+      lines.push(`   Annotated Date: ${formatDentalChartEntryAnnotatedAt(row)}`);
       lines.push('');
     });
   }
@@ -405,7 +421,7 @@ const buildDentalChartVersionHtml = ({ patient, version }) => {
           <div class="flags">${escapeHtml(flags)}</div>
           <div class="text">Pathology: ${escapeHtml(row.pathology || '-')}</div>
           <div class="text">Treatment: ${escapeHtml(row.treatment || '-')}</div>
-          <div class="text">Annotated Date: ${escapeHtml(row.event_date ? formatSriLankaDateTime(row.event_date, true) : '-')}</div>
+          <div class="text">Annotated Date: ${escapeHtml(formatDentalChartEntryAnnotatedAt(row))}</div>
         </div>
       </div>`;
     }).join('')
@@ -569,7 +585,7 @@ const buildPatientRecordExportPdf = ({ patient, history, dentalVersions, diagnos
           lines.push(`   ${entryIndex + 1}. Tooth ${getDentalChartVersionToothLabel(entry)} | Status: ${flags}`);
           lines.push(`      Pathology: ${stringifyRecordValue(entry.pathology)}`);
           lines.push(`      Treatment: ${stringifyRecordValue(entry.treatment)}`);
-          lines.push(`      Annotated Date: ${formatDateTime(entry.event_date)}`);
+          lines.push(`      Annotated Date: ${formatDentalChartEntryAnnotatedAt(entry)}`);
         });
       }
       lines.push('');
@@ -646,7 +662,7 @@ const buildPatientRecordExportHtml = ({ patient, history, dentalVersions, diagno
                 <div class="flags">${escapeHtml(flags)}</div>
                 <div class="text">Pathology: ${escapeHtml(stringifyRecordValue(row.pathology))}</div>
                 <div class="text">Treatment: ${escapeHtml(stringifyRecordValue(row.treatment))}</div>
-                <div class="text">Annotated Date: ${escapeHtml(formatDateTime(row.event_date))}</div>
+                <div class="text">Annotated Date: ${escapeHtml(formatDentalChartEntryAnnotatedAt(row))}</div>
               </div>
             </div>`;
         }).join('')
