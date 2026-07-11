@@ -42,6 +42,41 @@ const SORT_FIELD_MAP = {
   status: 'p.status'
 };
 
+const SRI_LANKA_TIME_ZONE = 'Asia/Colombo';
+
+const parseDateTimeForSriLanka = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const hasExplicitZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw);
+  const dateTimeLike = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(raw);
+  const parsed = new Date(dateTimeLike && !hasExplicitZone ? `${raw.replace(' ', 'T')}Z` : raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const formatSriLankaDateTime = (value, includeSeconds = false) => {
+  const parsed = parseDateTimeForSriLanka(value);
+  if (!parsed) return value ? String(value) : 'N/A';
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: SRI_LANKA_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: includeSeconds ? '2-digit' : undefined,
+    hour12: false
+  }).formatToParts(parsed);
+
+  const getPart = (type) => parts.find((part) => part.type === type)?.value || '';
+  const dateTime = `${getPart('year')}-${getPart('month')}-${getPart('day')} ${getPart('hour')}:${getPart('minute')}`;
+  return includeSeconds ? `${dateTime}:${getPart('second')}` : dateTime;
+};
+
 // Generate unique patient code
 const generatePatientCode = async () => {
   const prefix = 'P';
@@ -260,7 +295,7 @@ const buildDentalChartVersionPdf = ({ patient, version }) => {
   lines.push(`Patient Name: ${patientName}`);
   lines.push(`Version: ${version.version_label || 'Annotated Chart Version'}`);
   lines.push(`Annotated By: ${version.annotated_by_name || 'Unknown'} (User ID: ${version.annotated_by || 'N/A'})`);
-  lines.push(`Saved At: ${version.created_at ? String(version.created_at).slice(0, 19).replace('T', ' ') : 'N/A'}`);
+  lines.push(`Saved At: ${formatSriLankaDateTime(version.created_at, true)}`);
   lines.push(`Entry Count: ${version.entry_count || 0}`);
   lines.push('');
   lines.push('Annotated Teeth');
@@ -282,7 +317,7 @@ const buildDentalChartVersionPdf = ({ patient, version }) => {
       lines.push(`   Status: ${flags}`);
       lines.push(`   Pathology: ${row.pathology || '-'}`);
       lines.push(`   Treatment: ${row.treatment || '-'}`);
-      lines.push(`   Annotated Date: ${row.event_date ? String(row.event_date).slice(0, 19).replace('T', ' ') : '-'}`);
+      lines.push(`   Annotated Date: ${row.event_date ? formatSriLankaDateTime(row.event_date, true) : '-'}`);
       lines.push('');
     });
   }
@@ -351,7 +386,7 @@ const buildDentalChartVersionHtml = ({ patient, version }) => {
   const entries = Array.isArray(version.snapshot_data)
     ? [...version.snapshot_data].sort(compareDentalChartVersionRows)
     : [];
-  const createdAt = version.created_at ? String(version.created_at).slice(0, 19).replace('T', ' ') : 'N/A';
+  const createdAt = formatSriLankaDateTime(version.created_at, true);
 
   const cards = entries.length
     ? entries.map((row) => {
@@ -370,7 +405,7 @@ const buildDentalChartVersionHtml = ({ patient, version }) => {
           <div class="flags">${escapeHtml(flags)}</div>
           <div class="text">Pathology: ${escapeHtml(row.pathology || '-')}</div>
           <div class="text">Treatment: ${escapeHtml(row.treatment || '-')}</div>
-          <div class="text">Annotated Date: ${escapeHtml(row.event_date ? String(row.event_date).slice(0, 19).replace('T', ' ') : '-')}</div>
+          <div class="text">Annotated Date: ${escapeHtml(row.event_date ? formatSriLankaDateTime(row.event_date, true) : '-')}</div>
         </div>
       </div>`;
     }).join('')
@@ -453,19 +488,7 @@ const buildDentalChartVersionVisualPdf = async ({ patient, version }) => {
 
 const formatDateTime = (value) => {
   if (!value) return 'N/A';
-  const raw = String(value).trim();
-  const direct = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::\d{2})?/);
-  if (direct) {
-    return `${direct[1]} ${direct[2]}`;
-  }
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return raw;
-  const year = parsed.getFullYear();
-  const month = String(parsed.getMonth() + 1).padStart(2, '0');
-  const day = String(parsed.getDate()).padStart(2, '0');
-  const hour = String(parsed.getHours()).padStart(2, '0');
-  const minute = String(parsed.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day} ${hour}:${minute}`;
+  return formatSriLankaDateTime(value);
 };
 
 const formatDateOnly = (value) => {
