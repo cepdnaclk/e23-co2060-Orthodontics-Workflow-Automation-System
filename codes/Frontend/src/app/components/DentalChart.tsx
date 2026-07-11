@@ -805,7 +805,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
         <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 sm:p-5 md:rounded-3xl md:p-8">
           {loading && <p className="text-xs text-gray-500 mb-3">Loading dental chart...</p>}
 
-          <div className="space-y-10 max-h-[72vh] overflow-auto overscroll-contain pb-3 pl-1 pr-4 touch-auto md:space-y-12 md:max-h-[76vh] md:pr-10">
+          <div className="space-y-10 overflow-x-auto overscroll-x-contain pb-3 pl-1 pr-4 touch-auto md:space-y-12 md:pr-10">
             <div>
               <h5 className="text-sm font-bold text-slate-700 mb-4">Main Chart (Selection Only) - Milk Teeth</h5>
               <div className="space-y-10">
