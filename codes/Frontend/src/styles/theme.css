@@ -222,6 +222,12 @@
   }
 }
 
+@media (orientation: landscape) and (min-width: 900px) and (max-width: 1368px) and (pointer: coarse) {
+  .orthoflow-main-scroll {
+    padding-bottom: 8rem;
+  }
+}
+
 .hide-native-date-picker::-webkit-calendar-picker-indicator {
   display: none;
   opacity: 0;
