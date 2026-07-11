@@ -225,6 +225,7 @@ export function PatientListPage() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingPatientId, setDeletingPatientId] = useState<number | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [adminDeletedFilter, setAdminDeletedFilter] = useState<'active' | 'inactive'>('active');
   const [showFilters, setShowFilters] = useState(false);
@@ -324,8 +325,8 @@ export function PatientListPage() {
     } catch (err: any) {
       if (showLoader) {
         setError(err?.message || 'Failed to load patients');
+        setPatients([]);
       }
-      setPatients([]);
     } finally {
       if (showLoader) {
         setLoading(false);
@@ -723,17 +724,37 @@ export function PatientListPage() {
         ? 'I understand this permanent deletion cannot be undone.'
         : 'I understand this will deactivate the patient record.',
       onConfirm: async () => {
+        const previousPatients = patients;
+        const previousCounts = patientCounts;
         setSaving(true);
+        setDeletingPatientId(patientId);
         setError(null);
+        setPatients((currentPatients) => currentPatients.filter((patient) => patient.id !== patientId));
+        setPatientCounts((currentCounts) => {
+          if (permanent) {
+            return {
+              ...currentCounts,
+              inactive: Math.max(0, currentCounts.inactive - 1)
+            };
+          }
+
+          return {
+            active: Math.max(0, currentCounts.active - 1),
+            inactive: currentCounts.inactive + 1
+          };
+        });
         try {
           await apiService.patients.delete(String(patientId), permanent);
           localStorage.setItem('patients_updated_at', String(Date.now()));
-          await loadPatients(searchTerm, adminDeletedFilter);
-          await loadPatientCounts();
+          void loadPatients(searchTerm, adminDeletedFilter, false);
+          void loadPatientCounts();
         } catch (err: any) {
+          setPatients(previousPatients);
+          setPatientCounts(previousCounts);
           setError(err?.message || (permanent ? 'Failed to permanently delete patient' : 'Failed to delete patient'));
         } finally {
           setSaving(false);
+          setDeletingPatientId(null);
         }
       }
     });
@@ -1049,10 +1070,14 @@ export function PatientListPage() {
                           e.stopPropagation();
                           handleDeletePatient(p.id, `${p.first_name} ${p.last_name}`, adminDeletedFilter === 'inactive');
                         }}
-                        disabled={saving}
+                        disabled={deletingPatientId === p.id}
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
-                        {adminDeletedFilter === 'inactive' ? 'Delete Permanently' : 'Delete'}
+                        {deletingPatientId === p.id
+                          ? 'Deleting...'
+                          : adminDeletedFilter === 'inactive'
+                            ? 'Delete Permanently'
+                            : 'Delete'}
                       </Button>
                     </div>
                   )}

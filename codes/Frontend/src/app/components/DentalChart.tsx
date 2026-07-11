@@ -308,6 +308,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
   const [versionActionId, setVersionActionId] = useState<number | null>(null);
   const [downloadingVersionId, setDownloadingVersionId] = useState<number | null>(null);
   const [versionsTrashCount, setVersionsTrashCount] = useState(0);
+  const [pendingToothCodes, setPendingToothCodes] = useState<Set<string>>(() => new Set());
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -538,6 +539,18 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
     setToothPopover((prev) => ({ ...prev, open: false }));
   };
 
+  const setToothPending = (toothCode: string, pending: boolean) => {
+    setPendingToothCodes((prev) => {
+      const next = new Set(prev);
+      if (pending) {
+        next.add(toothCode);
+      } else {
+        next.delete(toothCode);
+      }
+      return next;
+    });
+  };
+
   const startPopoverDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     if (compactToothPopover || (event.target as HTMLElement).closest('button, input, textarea, label, select')) return;
     dragStateRef.current.dragging = true;
@@ -552,18 +565,37 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
 
   const toggleToothSelection = async (tooth: ToothDescriptor) => {
     if (!canEdit) return;
+    if (pendingToothCodes.has(tooth.key)) return;
 
-    const exists = Boolean(entries[tooth.key]);
+    const previousEntry = entries[tooth.key];
+    const exists = Boolean(previousEntry);
+    setToothPending(tooth.key, true);
+
     try {
       if (exists) {
-        await apiService.patients.deleteCustomDentalChartTooth(patientId, tooth.key);
         setEntries((prev) => {
           const next = { ...prev };
           delete next[tooth.key];
           return next;
         });
         if (selectedToothCode === tooth.key) setSelectedToothCode(null);
+        await apiService.patients.deleteCustomDentalChartTooth(patientId, tooth.key);
       } else {
+        const optimisticEntry: DentalEntry = {
+          tooth_code: tooth.key,
+          dentition: tooth.dentition,
+          notation_x: tooth.notationX,
+          notation_y: tooth.notationY,
+          status: 'HEALTHY',
+          is_pathology: false,
+          is_planned: false,
+          is_treated: false,
+          is_missing: false,
+          pathology: null,
+          treatment: null,
+          event_date: null
+        };
+        setEntries((prev) => ({ ...prev, [tooth.key]: optimisticEntry }));
         const response = await apiService.patients.upsertCustomDentalChartTooth(patientId, tooth.key, {
           dentition: tooth.dentition,
           notation_x: tooth.notationX,
@@ -578,7 +610,18 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
         setEntries((prev) => ({ ...prev, [saved.tooth_code]: saved }));
       }
     } catch (error: any) {
+      setEntries((prev) => {
+        const next = { ...prev };
+        if (previousEntry) {
+          next[tooth.key] = previousEntry;
+        } else {
+          delete next[tooth.key];
+        }
+        return next;
+      });
       toast.error(error?.message || 'Failed to update tooth selection');
+    } finally {
+      setToothPending(tooth.key, false);
     }
   };
 
@@ -777,14 +820,15 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
 
   const SelectorTooth = ({ tooth }: { tooth: ToothDescriptor }) => {
     const exists = Boolean(entries[tooth.key]);
+    const pending = pendingToothCodes.has(tooth.key);
     return (
       <button
         onClick={() => toggleToothSelection(tooth)}
-        disabled={!canEdit}
+        disabled={!canEdit || pending}
         data-testid={`dental-selector-tooth-${tooth.key}`}
         className={`relative flex min-h-24 min-w-16 touch-manipulation flex-col items-center p-1 rounded-lg transition-all ${
           exists ? 'bg-amber-50 ring-2 ring-amber-300 scale-[1.03]' : 'hover:bg-gray-50'
-        } ${!canEdit ? 'cursor-not-allowed opacity-80' : ''}`}
+        } ${pending ? 'opacity-75' : ''} ${!canEdit ? 'cursor-not-allowed opacity-80' : ''}`}
       >
         <NotationLabel x={tooth.notationX} y={tooth.notationY} active={exists} />
         <ToothSVG id={`selector-${tooth.key}`} showConditions={false} />
