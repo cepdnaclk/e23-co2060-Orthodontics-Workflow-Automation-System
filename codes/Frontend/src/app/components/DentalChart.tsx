@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Card, Badge, Button, Input } from './UI';
 import { AlertCircle, CheckCircle2, Download, Info, Loader2, RefreshCcw, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { apiService } from '../services/api';
@@ -573,12 +574,14 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
 
     try {
       if (exists) {
-        setEntries((prev) => {
-          const next = { ...prev };
-          delete next[tooth.key];
-          return next;
+        flushSync(() => {
+          setEntries((prev) => {
+            const next = { ...prev };
+            delete next[tooth.key];
+            return next;
+          });
+          if (selectedToothCode === tooth.key) setSelectedToothCode(null);
         });
-        if (selectedToothCode === tooth.key) setSelectedToothCode(null);
         await apiService.patients.deleteCustomDentalChartTooth(patientId, tooth.key);
       } else {
         const optimisticEntry: DentalEntry = {
@@ -968,9 +971,9 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
             <div>
-              <h5 className="text-sm font-bold text-slate-800">Annotated Chart Versions (Files)</h5>
+              <h5 className="text-sm font-bold text-slate-800">Annotated Chart Versions</h5>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
               {canManageVersionBin && (
                 <Button
                   variant="secondary"
