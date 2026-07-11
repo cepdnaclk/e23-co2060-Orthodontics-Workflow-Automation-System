@@ -210,6 +210,16 @@
     width: 4.25rem;
     height: 4.25rem;
   }
+
+  .dental-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dental-chart-legend {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .hide-native-date-picker::-webkit-calendar-picker-indicator {
