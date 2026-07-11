@@ -333,14 +333,14 @@ export function ClinicQueuePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {statCards.map((card) => (
-          <Card key={card.label} className="min-h-[104px] p-4">
-            <div className="flex items-start justify-between gap-2">
+          <Card key={card.label} className="p-5">
+            <div className="flex items-start justify-between gap-3">
               <p className="text-xs font-medium leading-tight text-gray-500 sm:text-sm">{card.label}</p>
               <card.icon className={cn('h-4 w-4 shrink-0 sm:h-5 sm:w-5', card.className)} />
             </div>
-            <p className={cn('mt-2 text-2xl font-extrabold leading-none sm:text-3xl', card.className)}>{card.value}</p>
+            <p className={cn('mt-2 text-3xl font-extrabold leading-none', card.className)}>{card.value}</p>
           </Card>
         ))}
       </div>
