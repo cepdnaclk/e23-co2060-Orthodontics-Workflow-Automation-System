@@ -789,12 +789,11 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
   return (
     <div className="relative">
       <Card className="p-6 md:p-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="dental-chart-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h4 className="text-2xl font-bold text-slate-900">Clinical Dental Chart</h4>
-            <p className="text-sm text-slate-500">Select existing teeth first, then manage conditions in the custom chart.</p>
           </div>
-          <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate-600">
+          <div className="dental-chart-legend flex flex-wrap gap-4 text-sm font-semibold text-slate-600">
             <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-amber-400 bg-amber-100" />Selected in main chart</div>
             <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-red-500 bg-red-100" />Pathology</div>
             <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-blue-500 bg-blue-100" />Planned</div>
@@ -806,7 +805,7 @@ export function DentalChart({ patientId, canEdit, role }: Props) {
         <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3 sm:p-5 md:rounded-3xl md:p-8">
           {loading && <p className="text-xs text-gray-500 mb-3">Loading dental chart...</p>}
 
-          <div className="space-y-10 overflow-x-auto overscroll-x-contain pb-3 pl-1 pr-4 touch-pan-x md:space-y-12 md:pr-10">
+          <div className="space-y-10 max-h-[72vh] overflow-auto overscroll-contain pb-3 pl-1 pr-4 touch-auto md:space-y-12 md:max-h-[76vh] md:pr-10">
             <div>
               <h5 className="text-sm font-bold text-slate-700 mb-4">Main Chart (Selection Only) - Milk Teeth</h5>
               <div className="space-y-10">
