@@ -15,10 +15,10 @@ The system uses role-based access control. Some roles can only access patients a
 
 | Role | Main Purpose |
 | --- | --- |
-| `ADMIN` | Full system administration |
+| `ADMIN` | User administration, audit logs, reports, and broad patient/workflow oversight |
 | `ORTHODONTIST` | Clinical supervision, patient care, approvals, and student case assignment |
 | `DENTAL_SURGEON` | Clinical patient care, treatment documentation, and assigned student supervision |
-| `NURSE` | Queue support, appointments, materials access |
+| `NURSE` | Queue viewing, appointments, and inventory/material management |
 | `RECEPTION` | Patient registration, visits, payments, queue workflow |
 | `STUDENT` | Assigned patient/case workflow under supervision |
 
@@ -30,7 +30,7 @@ The system uses role-based access control. Some roles can only access patients a
 | Audit logs | Admin |
 | Reports | Admin |
 | Patient registration | Admin, Reception |
-| Patient profile viewing | Clinical and assigned roles |
+| Patient profile viewing | Admin, Nurse, and Reception have broad access; Orthodontist, Dental Surgeon, and Student access is assignment-scoped |
 | Patient assignment | Reception can initiate assignment requests; orthodontists/dental surgeons approve requests addressed to them; orthodontists can assign dental surgeons and students; dental surgeons can assign students |
 | Visits | Admin, Reception, Nurse, clinical roles |
 | Clinic queue | All roles can view; Reception manages queue membership; Reception, Orthodontist, Dental Surgeon, and Student can update status |
@@ -38,7 +38,7 @@ The system uses role-based access control. Some roles can only access patients a
 | Documents | Admin and permitted patient-care roles |
 | Diagnosis/treatment notes | Clinical roles and assigned students, depending on permission |
 | Payments | Admin and Reception; read access for selected clinical roles |
-| Inventory | Admin can view; Nurse can view and manage items and stock |
+| Inventory | The UI exposes inventory to Admin and Nurse; every authenticated role can currently read inventory through the API; only Nurse can create, update, delete, restore, or adjust stock |
 | Student cases | Admin, Orthodontist, Dental Surgeon, Student |
 
 ## Assignment-Based Access
@@ -51,7 +51,11 @@ Examples:
 - Dental surgeons and orthodontists can be scoped by assignment.
 - Orthodontists and dental surgeons can view and manage student cases for students they supervise.
 - Admins can view student case progress and delete removed student cases when cleanup is needed.
-- Reception and admin roles have broader operational access.
+- Reception, Nurse, and Admin roles have broader patient-viewing access.
+
+## UI and API Scope
+
+Sidebar visibility is not always identical to backend API authorization. In particular, the inventory page is shown to Admin and Nurse users, while the current inventory read endpoints accept any authenticated role. Inventory mutations remain restricted to Nurse users in both the UI and API.
 
 ## Practical Maintenance Note
 

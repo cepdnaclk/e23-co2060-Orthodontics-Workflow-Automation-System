@@ -266,7 +266,7 @@ Recommended cloud services:
 - Render Static Site for frontend
 - Render Docker Web Service for backend
 - Aiven MySQL for database
-- Cloudflare R2 for documents and generated files
+- Cloudflare R2 for uploaded patient documents and images
 - SMTP2GO or Brevo for email delivery
 - Google Cloud OAuth client for Google Sign-In
 

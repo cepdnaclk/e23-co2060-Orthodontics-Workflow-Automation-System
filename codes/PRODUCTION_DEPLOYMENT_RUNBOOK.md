@@ -231,13 +231,13 @@ SMTP_SECURE=true
 
 Important: `SMTP_USER` must be the Brevo SMTP login, usually something like `xxxx@smtp-brevo.com`. `SMTP_PASS` must be the Brevo SMTP key, not the Brevo web login password, not a Gmail password, and not a Brevo API key.
 
-Do not enable Brevo SMTP key IP restrictions unless the deployment has fixed outbound IP addresses. Render free and basic deployments may not have a stable outbound IP.
+Do not enable Brevo SMTP key IP restrictions unless the deployment uses Render's dedicated outbound IP feature or the allowed list includes the applicable shared regional outbound ranges. Render services without dedicated outbound IPs use shared ranges that can change.
 
-SMTP2GO temporary testing note: while demonstrating or piloting before the Dental Faculty sender is ready, it is acceptable to use the previously working SMTP2GO sender:
+SMTP2GO temporary testing note: while demonstrating or piloting before the Dental Faculty sender is ready, use an SMTP2GO-authenticated account and a sender that is verified in the stakeholder's SMTP2GO account:
 
 ```env
-SMTP_FROM=e23182@eng.pdn.ac.lk
-SMTP_USER=eng.pdn.ac.lk
+SMTP_FROM=<verified-testing-sender>
+SMTP_USER=<smtp2go-smtp-user>
 ```
 
 For Brevo testing with a verified Gmail sender, use:
@@ -351,9 +351,7 @@ Use the same client ID in backend and frontend env vars.
 orthoflow-production
 ```
 
-Use the same region for backend and frontend if available.
-
-Recommended region:
+Render Static Sites are delivered through a global CDN and do not have a selectable deployment region. Choose a backend Web Service region close to the Aiven MySQL region to reduce database latency. A suitable backend region when the database is nearby is:
 
 ```text
 Singapore
@@ -457,9 +455,13 @@ Expected result:
 ```json
 {
   "success": true,
-  "message": "OrthoFlow API is running"
+  "message": "OrthoFlow API is running",
+  "timestamp": "<ISO-8601 timestamp>",
+  "version": "1.0.0"
 }
 ```
+
+This endpoint confirms that the backend process is responding. It does not perform a fresh database or object-storage readiness check on each request.
 
 ## 10. Deploy Frontend on Render
 

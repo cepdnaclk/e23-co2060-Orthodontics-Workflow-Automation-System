@@ -9,7 +9,7 @@ Use stakeholder-owned accounts where possible.
 - GitHub fork of the parent repository
 - Render for frontend and backend hosting
 - Aiven MySQL for the production database
-- Cloudflare R2 for uploaded documents and generated files
+- Cloudflare R2 for uploaded patient documents and images
 - SMTP2GO or Brevo for email
 - Google Cloud OAuth for Google Sign-In
 
@@ -122,9 +122,9 @@ Recommended bucket contents:
 - patient documents
 - uploaded images
 - uploaded PDFs
-- generated or stored file objects required by the backend
 
 The database stores the object key and metadata. R2 stores the actual file bytes.
+Dental-chart version PDFs and complete patient-record PDFs are generated on demand and streamed to the requester; the backend does not store those generated PDFs in R2.
 
 ## 6. Email Provider
 
