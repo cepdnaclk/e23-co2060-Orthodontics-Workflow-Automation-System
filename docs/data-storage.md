@@ -25,6 +25,7 @@ Main data stored in MySQL:
 - patient material usage records
 - student cases, case progress logs, and case tasks
 - audit logs
+- archived audit logs when `AUDIT_LOG_ARCHIVE_BEFORE_DELETE=true`; the backend creates `audit_logs_archive` on demand
 - system settings
 
 ## Cloudflare R2
@@ -73,4 +74,3 @@ Production maintainers should confirm:
 - Cloudflare R2 bucket access is owned by the institution.
 - Render environment variables are documented securely.
 - GitHub source code is stored in an institution-owned fork or organization repository.
-

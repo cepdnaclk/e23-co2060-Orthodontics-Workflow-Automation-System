@@ -52,7 +52,7 @@ These are used by admin setup scripts:
 | `JWT_EXPIRE` | Access token lifetime, for example `24h` |
 | `JWT_REFRESH_EXPIRE` | Refresh token lifetime, for example `7d` |
 | `SESSION_TIMEOUT_SECONDS` | Idle timeout, for example `3600` |
-| `GOOGLE_CLIENT_ID` | Google OAuth web client ID |
+| `GOOGLE_CLIENT_ID` | Google OAuth web client ID; the backend accepts a comma-separated list of allowed client IDs, while the frontend uses one client ID |
 
 ### Audit Log Retention
 
@@ -63,6 +63,8 @@ These are used by admin setup scripts:
 | `AUDIT_LOG_CLEANUP_INTERVAL_HOURS` | `24` |
 | `AUDIT_LOG_CLEANUP_BATCH_SIZE` | `5000` |
 | `AUDIT_LOG_ARCHIVE_BEFORE_DELETE` | `false` |
+
+By default, the retention job runs every 24 hours and deletes `audit_logs` rows older than 180 days in batches of 5,000. When `AUDIT_LOG_ARCHIVE_BEFORE_DELETE=true`, each batch is copied to the `audit_logs_archive` table before the original rows are deleted. The archive table is created automatically when archiving is enabled.
 
 ### Automatic Appointment Reminders
 
@@ -78,11 +80,11 @@ For local simulation, set `EMAIL_SIMULATION=true` and leave the SMTP connection 
 
 ### Uploads
 
-| Variable | Purpose |
-| --- | --- |
-| `UPLOAD_DIR` | Temporary/local upload folder |
-| `MAX_FILE_SIZE` | Maximum upload size in bytes |
-| `ALLOWED_FILE_TYPES` | Allowed upload extensions |
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `UPLOAD_DIR` | `./src/uploads` | Temporary/local upload folder |
+| `MAX_FILE_SIZE` | `10485760` | Maximum upload size in bytes (10 MiB by default) |
+| `ALLOWED_FILE_TYPES` | `*` | Comma-separated allowed upload extensions; `*` permits all extensions |
 
 Local development can use:
 
@@ -159,9 +161,11 @@ SMTP_SECURE=true
 
 | Variable | Purpose |
 | --- | --- |
-| `RATE_LIMIT_WINDOW_MS` | Rate-limit window |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window |
+| `RATE_LIMIT_WINDOW_MS` | Login rate-limit window in milliseconds; defaults to `900000` (15 minutes) |
+| `RATE_LIMIT_MAX_REQUESTS` | Maximum login attempts per IP per window; defaults to `5` |
 | `CORS_ORIGIN` | Frontend URL allowed to call backend |
+
+The rate limiter applies to `POST /api/auth/login` and `POST /api/auth/google`; it does not currently apply to every API route.
 
 Production example:
 

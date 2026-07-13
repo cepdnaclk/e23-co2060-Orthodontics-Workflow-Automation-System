@@ -55,9 +55,14 @@ Expected result:
 
 ```json
 {
-  "success": true
+  "success": true,
+  "message": "OrthoFlow API is running",
+  "timestamp": "<ISO-8601 timestamp>",
+  "version": "1.0.0"
 }
 ```
+
+This is a process-liveness response. The endpoint does not perform a fresh database or object-storage readiness check on each request.
 
 Frontend:
 
