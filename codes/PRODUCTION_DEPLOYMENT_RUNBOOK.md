@@ -133,7 +133,18 @@ Use the default database if appropriate:
 defaultdb
 ```
 
-The backend will create or update the required tables on startup.
+Backend startup guards update selected parts of an existing OrthoFlow schema, but they do not create the core schema in a fresh database.
+
+Before the first backend deployment, initialize the new/empty Aiven database and create the first admin from a trusted administrative machine. Run these commands from the repository root:
+
+```bash
+cd codes/Backend
+npm ci
+npm run bootstrap-db
+npm run ensure-admin
+```
+
+Use the production Aiven values for `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL`, `DB_SSL_REJECT_UNAUTHORIZED`, and `DB_SSL_CA`, together with the `SEED_ADMIN_*` values. Confirm that `DB_NAME` identifies the intended new/empty OrthoFlow database before running `bootstrap-db`. Never run the reset-oriented `migrate` command against production, and take a backup before schema work on an existing database.
 
 ## 5. Create Email Sending
 
@@ -385,11 +396,6 @@ DB_SSL=true
 DB_SSL_REJECT_UNAUTHORIZED=true
 DB_SSL_CA=your_aiven_ca_certificate
 
-SEED_ADMIN_NAME=System Administrator
-SEED_ADMIN_EMAIL=initial_admin_email
-SEED_ADMIN_DEPARTMENT=Orthodontics
-SEED_ADMIN_PASSWORD=initial_secure_password
-
 JWT_SECRET=generate_a_long_random_secret
 JWT_REFRESH_SECRET=generate_another_long_random_secret
 JWT_EXPIRE=24h
@@ -403,6 +409,10 @@ AUDIT_LOG_RETENTION_DAYS=180
 AUDIT_LOG_CLEANUP_INTERVAL_HOURS=24
 AUDIT_LOG_CLEANUP_BATCH_SIZE=5000
 AUDIT_LOG_ARCHIVE_BEFORE_DELETE=false
+
+REMINDER_AUTO_SCAN_MS=10000
+REMINDER_AUTO_WINDOW_HOURS=48
+REMINDER_MAX_CONCURRENT=3
 
 UPLOAD_DIR=/tmp/uploads
 MAX_FILE_SIZE=104857600
@@ -428,11 +438,11 @@ SMTP_SECURE=false
 SMTP_USER=chosen_email_provider_smtp_username
 SMTP_PASS=chosen_email_provider_smtp_password_or_key
 SMTP_FROM=approved_sender_email
-
-LOG_LEVEL=info
 ```
 
 Use the SMTP2GO values from **Option A** or the Brevo values from **Option B**. Do not mix credentials between providers.
+
+Do not keep `SEED_ADMIN_PASSWORD` in the Render runtime environment after the one-time `ensure-admin` operation. The running server does not use the `SEED_ADMIN_*` values.
 
 Deploy the backend.
 
@@ -523,7 +533,7 @@ Do not add backend URLs as JavaScript origins unless the Google button is served
 ## 13. First Production Login
 
 1. Open the frontend URL.
-2. Sign in with the seeded admin account:
+2. Sign in with the admin account created by the earlier `npm run ensure-admin` step:
 
 ```text
 SEED_ADMIN_EMAIL
@@ -615,7 +625,7 @@ Minimum production backup expectations:
 
 ```text
 Aiven MySQL backups: enabled by Aiven plan
-Cloudflare R2 files: persistent object storage
+Cloudflare R2 files: persistent object storage plus a separately defined recovery/export strategy
 GitHub repository: latest source code
 Render env vars: securely documented by stakeholder
 ```

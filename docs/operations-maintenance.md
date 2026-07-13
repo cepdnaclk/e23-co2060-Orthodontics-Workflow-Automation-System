@@ -97,6 +97,8 @@ Maintain backups for:
 
 The uploaded files are not stored only in Render when R2 is enabled. They are stored in Cloudflare R2.
 
+R2 persistence is not an independent backup. Define and test a separate recovery strategy, such as scheduled exports or replication to a separately controlled destination. Record the recovery owner, frequency, retention period, and restoration test procedure. Confirm the exact Aiven backup retention and restore options provided by the selected service plan.
+
 ## Secrets and Passwords
 
 Rotate secrets if:
@@ -168,4 +170,3 @@ Before handing over the system, confirm that the stakeholder owns:
 - Cloudflare R2 account/bucket
 - SMTP2GO or Brevo account
 - Google Cloud OAuth project
-

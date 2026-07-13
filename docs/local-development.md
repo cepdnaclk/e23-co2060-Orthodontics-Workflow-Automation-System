@@ -55,6 +55,9 @@ SESSION_TIMEOUT_SECONDS=3600
 GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 
 EMAIL_SIMULATION=true
+REMINDER_AUTO_SCAN_MS=10000
+REMINDER_AUTO_WINDOW_HOURS=48
+REMINDER_MAX_CONCURRENT=3
 
 UPLOAD_DIR=./src/uploads
 MAX_FILE_SIZE=104857600
@@ -63,8 +66,6 @@ ALLOWED_FILE_TYPES=jpg,jpeg,png,pdf,doc,docx
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 CORS_ORIGIN=http://localhost:5173
-
-LOG_LEVEL=info
 ```
 
 Create/update database schema:
@@ -138,9 +139,9 @@ For normal local development, keep:
 EMAIL_SIMULATION=true
 ```
 
-This avoids sending real emails while testing.
+Also leave `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS` unset. This causes the backend to log simulated emails instead of sending them. A complete SMTP configuration takes precedence and sends real email even when `EMAIL_SIMULATION=true`.
 
-To test real email sending locally, set `EMAIL_SIMULATION=false` and provide SMTP settings. See [Environment Variables](environment-variables.md).
+To test real email sending locally, provide complete SMTP settings and preferably set `EMAIL_SIMULATION=false` so missing SMTP configuration fails clearly. See [Environment Variables](environment-variables.md).
 
 ## Common Local Problems
 
@@ -168,4 +169,3 @@ Check:
 - database name exists
 - username/password are correct
 - `.env` is in `codes/Backend`
-

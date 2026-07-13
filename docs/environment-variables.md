@@ -18,7 +18,6 @@ codes/Backend
 | --- | --- |
 | `NODE_ENV` | `development` locally, `production` on Render |
 | `PORT` | API server port. Render commonly uses `10000` |
-| `LOG_LEVEL` | Logging level, usually `info` |
 
 ### Database
 
@@ -65,6 +64,18 @@ These are used by admin setup scripts:
 | `AUDIT_LOG_CLEANUP_BATCH_SIZE` | `5000` |
 | `AUDIT_LOG_ARCHIVE_BEFORE_DELETE` | `false` |
 
+### Automatic Appointment Reminders
+
+The automatic reminder job starts with the backend. These variables control its polling and concurrency behavior:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `REMINDER_AUTO_SCAN_MS` | `10000` | Interval between scans for upcoming scheduled visits |
+| `REMINDER_AUTO_WINDOW_HOURS` | `48` | How far ahead to search for appointments |
+| `REMINDER_MAX_CONCURRENT` | `3` | Maximum reminder jobs processed concurrently |
+
+For local simulation, set `EMAIL_SIMULATION=true` and leave the SMTP connection variables unset. With the current implementation, a complete SMTP configuration takes precedence and sends real email even when `EMAIL_SIMULATION=true`. Simulated reminders are still recorded as processed.
+
 ### Uploads
 
 | Variable | Purpose |
@@ -105,7 +116,11 @@ R2_ACCOUNT_ID=your_cloudflare_account_id
 
 If `R2_ENDPOINT` is set, it is used directly.
 
+For another S3-compatible provider, use `FILE_STORAGE_PROVIDER=s3` and the corresponding `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, and `S3_FORCE_PATH_STYLE` variables. When both naming schemes are present, the `S3_*` value takes precedence over the matching `R2_*` value.
+
 ### SMTP2GO Email
+
+`EMAIL_SIMULATION` controls what happens only when a complete SMTP transport is unavailable: `true` logs a simulated email, while `false` raises a configuration error. It does not override a complete SMTP configuration.
 
 ```env
 EMAIL_SIMULATION=false
@@ -173,4 +188,3 @@ Local development:
 VITE_API_BASE_URL=http://localhost:3000
 VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
-

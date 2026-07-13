@@ -102,6 +102,17 @@ DB_SSL_CA=-----BEGIN CERTIFICATE-----
 -----END CERTIFICATE-----
 ```
 
+Before the first backend deployment, initialize the new/empty Aiven database and create the first admin from a trusted administrative machine. Run these commands from the repository root:
+
+```bash
+cd codes/Backend
+npm ci
+npm run bootstrap-db
+npm run ensure-admin
+```
+
+Use the production database and `SEED_ADMIN_*` environment variables for this one-time operation. Confirm that `DB_NAME` points to the intended new/empty OrthoFlow database before running `bootstrap-db`. Back up an existing database before any schema operation.
+
 ## Cloudflare R2
 
 Create an R2 bucket for uploaded patient files.
@@ -151,12 +162,12 @@ In Google Cloud Console:
 Recommended order:
 
 1. Create Aiven MySQL.
-2. Create Cloudflare R2 bucket and token.
-3. Create SMTP provider credentials.
-4. Create Google OAuth client.
-5. Deploy backend on Render.
-6. Check backend `/health`.
-7. Deploy frontend on Render.
-8. Update backend `CORS_ORIGIN`.
-9. Test login, file upload/download, email sending, dental chart PDF download, and reports.
-
+2. Initialize the new MySQL schema and first admin once.
+3. Create Cloudflare R2 bucket and token.
+4. Create SMTP provider credentials.
+5. Create Google OAuth client.
+6. Deploy backend on Render.
+7. Check backend `/health`.
+8. Deploy frontend on Render.
+9. Update backend `CORS_ORIGIN`.
+10. Test login, file upload/download, email sending, dental chart PDF download, and reports.

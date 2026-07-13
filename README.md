@@ -8,7 +8,7 @@ The system is split into:
 - `codes/Backend` - Node.js/Express API server.
 - MySQL database - structured clinical, user, audit, and workflow records.
 - Cloudflare R2 or S3-compatible object storage - uploaded patient documents/images.
-- SMTP provider - password reset and reminder emails.
+- SMTP provider - administrator-generated temporary-password and appointment-reminder emails.
 
 ## Current Production Architecture
 

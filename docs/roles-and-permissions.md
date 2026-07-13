@@ -31,14 +31,14 @@ The system uses role-based access control. Some roles can only access patients a
 | Reports | Admin |
 | Patient registration | Admin, Reception |
 | Patient profile viewing | Clinical and assigned roles |
-| Patient assignment | Admin, Orthodontist/Dental Surgeon approval flow; orthodontists can assign dental surgeons and students; dental surgeons can assign students |
+| Patient assignment | Reception can initiate assignment requests; orthodontists/dental surgeons approve requests addressed to them; orthodontists can assign dental surgeons and students; dental surgeons can assign students |
 | Visits | Admin, Reception, Nurse, clinical roles |
-| Clinic queue | Admin, Nurse, Reception, Orthodontist, Dental Surgeon, Student |
+| Clinic queue | All roles can view; Reception manages queue membership; Reception, Orthodontist, Dental Surgeon, and Student can update status |
 | Dental chart | Admin, assigned clinical roles, assigned students |
 | Documents | Admin and permitted patient-care roles |
 | Diagnosis/treatment notes | Clinical roles and assigned students, depending on permission |
 | Payments | Admin and Reception; read access for selected clinical roles |
-| Inventory | Admin and Nurse |
+| Inventory | Admin can view; Nurse can view and manage items and stock |
 | Student cases | Admin, Orthodontist, Dental Surgeon, Student |
 
 ## Assignment-Based Access

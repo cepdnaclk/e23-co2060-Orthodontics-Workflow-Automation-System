@@ -70,7 +70,7 @@ Use `migrate` and `seed` only for controlled development resets. They are not th
 
 ## Environment Variables
 
-Create `codes/Backend/.env` for local development. In Render, set the same values in the backend service environment.
+Create `codes/Backend/.env` for local development. In Render, set the runtime values in the backend service environment. The `SEED_ADMIN_*` values are only read by the setup scripts and are not required by the normal server process after the first admin has been created.
 
 Main groups:
 
@@ -81,6 +81,7 @@ Main groups:
 - Google: `GOOGLE_CLIENT_ID`
 - file storage: `FILE_STORAGE_PROVIDER`, `UPLOAD_DIR`, `R2_*` or `S3_*`
 - email: `EMAIL_SIMULATION`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+- automatic reminders: `REMINDER_AUTO_SCAN_MS`, `REMINDER_AUTO_WINDOW_HOURS`, `REMINDER_MAX_CONCURRENT`
 - rate limiting and CORS: `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS`, `CORS_ORIGIN`
 - audit retention: `AUDIT_LOG_RETENTION_*`
 
@@ -90,7 +91,18 @@ See `../../docs/environment-variables.md` for the full handover reference.
 
 The backend connects to MySQL at startup and applies runtime schema guards from `src/config/database.js`.
 
-These guards are designed to safely add missing current-system tables and columns. They do not replace database backups.
+These guards add selected newer tables and columns to an already initialized OrthoFlow database. They do not create the core schema in a fresh database and do not replace database backups.
+
+For a new production database, initialize it once from a trusted administrative machine before the first backend deployment. From the repository root:
+
+```bash
+cd codes/Backend
+npm ci
+npm run bootstrap-db
+npm run ensure-admin
+```
+
+Run `bootstrap-db` only after confirming that `DB_NAME` identifies the intended new/empty OrthoFlow database. For an existing production database, take a backup first and rely on the startup guards for supported incremental changes.
 
 For cloud deployment, Aiven MySQL should be configured with SSL enabled:
 
@@ -128,7 +140,7 @@ Supported provider examples:
 - SMTP2GO: `mail.smtp2go.com`, usually port `2525`
 - Brevo: `smtp-relay.brevo.com`, usually port `587`
 
-Set `EMAIL_SIMULATION=true` for local testing when real email should not be sent.
+For local simulation, set `EMAIL_SIMULATION=true` and leave the SMTP connection variables unset. With the current implementation, a complete SMTP configuration takes precedence and sends real email even when `EMAIL_SIMULATION=true`.
 
 ## Docker Deployment
 

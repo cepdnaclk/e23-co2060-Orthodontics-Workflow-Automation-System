@@ -106,7 +106,7 @@ Production database:
 - SSL required
 - The backend reads Aiven host, port, username, password, database name, and CA certificate from environment variables.
 
-The backend includes startup schema guards. When the backend starts, it creates or updates required tables/columns if missing. This is intended to be non-destructive.
+The backend includes startup schema guards that add selected newer tables and columns to an already initialized OrthoFlow database. The guards do not create the core schema in a fresh database. A new database must first be initialized with `npm run bootstrap-db`, followed by `npm run ensure-admin` to create the first administrator.
 
 ## Object Storage
 
@@ -139,9 +139,8 @@ Supported production options:
 
 Email is used for:
 
-- password reset emails
-- temporary password emails
-- visit reminders, where enabled
+- initial-account and administrator-reset temporary-password emails
+- appointment reminders
 
 ## Authentication
 
@@ -158,4 +157,3 @@ Google Sign-In requires the same Google OAuth client ID in:
 
 - backend `GOOGLE_CLIENT_ID`
 - frontend `VITE_GOOGLE_CLIENT_ID`
-

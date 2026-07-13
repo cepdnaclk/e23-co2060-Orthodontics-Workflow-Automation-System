@@ -144,7 +144,18 @@ DB_SSL_REJECT_UNAUTHORIZED=true
 DB_SSL_CA=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----
 ```
 
-The backend runs non-destructive schema guards on startup. These guards are intended to add missing tables and columns required by the current application without manually running SQL for every small deployment.
+The backend runs non-destructive schema guards on startup. These guards add selected newer tables and columns to an already initialized OrthoFlow database; they do not create the core schema in a fresh database.
+
+For a new database, configure the production database variables and the intended `SEED_ADMIN_*` values on a trusted administrative machine, then run these commands once from the repository root before the first backend deployment:
+
+```bash
+cd codes/Backend
+npm ci
+npm run bootstrap-db
+npm run ensure-admin
+```
+
+Confirm that the target database is new/empty before running `bootstrap-db`. Back up an existing database before any schema operation.
 
 MySQL stores structured system data:
 
@@ -264,10 +275,11 @@ Deployment order:
 1. Create stakeholder-owned accounts.
 2. Fork the parent repository.
 3. Create Aiven MySQL.
-4. Create Cloudflare R2 bucket and token.
-5. Configure email provider.
-6. Create Render backend service.
-7. Create Render frontend service.
-8. Update CORS and frontend API URL.
-9. Update Google OAuth origins.
-10. Deploy backend, deploy frontend, test full workflows.
+4. Initialize the new MySQL schema and first admin once.
+5. Create Cloudflare R2 bucket and token.
+6. Configure email provider.
+7. Create Render backend service.
+8. Create Render frontend service.
+9. Update CORS and frontend API URL.
+10. Update Google OAuth origins.
+11. Deploy backend, deploy frontend, test full workflows.
