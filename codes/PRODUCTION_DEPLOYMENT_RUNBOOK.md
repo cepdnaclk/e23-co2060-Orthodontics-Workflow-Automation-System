@@ -727,7 +727,7 @@ Use a Brevo SMTP key as SMTP_PASS.
 Do not use the Brevo web login password.
 Do not use a Brevo API key as SMTP_PASS.
 Confirm SMTP_FROM is a verified sender in Brevo.
-Do not enable SMTP key IP restrictions unless Render has fixed outbound IPs.
+Do not enable SMTP key IP restrictions unless the deployment uses Render's dedicated outbound IP feature or the allowed list includes the applicable shared regional outbound ranges.
 ```
 
 If using a Gmail sender for testing, recipients may see a Brevo sending domain with the Gmail address as reply-to. For production, use a stakeholder-owned verified domain such as dental.pdn.ac.lk.
