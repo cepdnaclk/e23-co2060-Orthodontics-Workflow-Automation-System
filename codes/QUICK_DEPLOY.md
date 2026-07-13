@@ -100,7 +100,18 @@ Create an Aiven MySQL service and copy:
 - password
 - CA certificate
 
-The backend applies schema guards on startup, so redeploying the backend is usually enough for current incremental schema changes. Keep Aiven backups enabled.
+The backend startup guards update selected parts of an existing OrthoFlow schema, but they do not create the core schema in a fresh database.
+
+Before the first backend deployment, configure the Aiven database variables and intended `SEED_ADMIN_*` values on a trusted administrative machine, then initialize the new/empty database once from the repository root:
+
+```bash
+cd codes/Backend
+npm ci
+npm run bootstrap-db
+npm run ensure-admin
+```
+
+Confirm that `DB_NAME` identifies the intended new/empty OrthoFlow database before running `bootstrap-db`. Back up an existing database before any schema operation. Normal later deployments use the startup guards for supported incremental changes.
 
 ## 5. Cloudflare R2
 
@@ -173,6 +184,6 @@ After backend and frontend are deployed:
 8. On a phone-sized viewport, open the dental chart annotation popup and focus the Pathology/Treatment fields.
 9. Confirm student case assignment/supervision works for orthodontists and dental surgeons.
 10. Confirm admin can delete a removed student case.
-11. Send a password reset email.
+11. As an admin, generate a temporary-password reset email for a test user.
 12. Check audit logs as admin.
 13. Confirm Render logs show no repeated errors.

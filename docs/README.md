@@ -61,9 +61,9 @@ The frontend is organized around route-based pages and reusable components. It s
 
 ## Testing and Validation
 
-The system has been validated through local development checks, backend health checks, API workflow testing, frontend route verification, role-specific access checks, production deployment smoke testing, and repeated cloud deployment verification.
+The repository currently does not include a committed automated test suite. Before a release or handover, maintainers should run the documented build, backend health, role-access, API workflow, and production smoke checks and retain the results outside the repository.
 
-Key verified workflows include login, Google Sign-In, patient registration, team assignment, visits, live queue updates, dental chart editing and PDF generation, document upload and download, inventory changes, orthodontist and dental surgeon student-case supervision, admin cleanup of removed student cases, reports, audit-log filtering, touch-device chart interaction checks, and email-based password reset.
+The manual validation scope should include login, Google Sign-In, patient registration, team assignment, visits, live queue updates, dental chart editing and PDF generation, document upload and download, inventory changes, orthodontist and dental surgeon student-case supervision, admin cleanup of removed student cases, reports, audit-log filtering, touch-device chart interactions, appointment reminders, and administrator-generated temporary-password reset emails.
 
 ## Conclusion
 

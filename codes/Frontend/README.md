@@ -110,7 +110,8 @@ After changing `VITE_API_BASE_URL` or `VITE_GOOGLE_CLIENT_ID`, redeploy the fron
 
 - All signed-in users: dashboard, patients, settings
 - Admin: reports, user management, audit logs
-- Admin and nurse: materials/inventory
+- Admin: view materials/inventory
+- Nurse: view and manage materials/inventory, including stock changes
 - Admin, nurse, orthodontist, dental surgeon, student, reception: clinic queue
 - Admin, orthodontist, dental surgeon, student: student cases
 - Orthodontist and dental surgeon: request approvals
