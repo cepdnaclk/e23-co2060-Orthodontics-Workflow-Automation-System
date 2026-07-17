@@ -2,6 +2,8 @@
 
 The system uses role-based access control. Some roles can only access patients assigned to them.
 
+For step-by-step role activities, see [Role and End-to-End Workflows](role-workflows.md). For the behavior of each screen, see the [Complete Feature Guide](feature-guide.md).
+
 ## Roles
 
 - `ADMIN`
@@ -18,28 +20,32 @@ The system uses role-based access control. Some roles can only access patients a
 | `ADMIN` | User administration, audit logs, reports, and broad patient/workflow oversight |
 | `ORTHODONTIST` | Clinical supervision, patient care, approvals, and student case assignment |
 | `DENTAL_SURGEON` | Clinical patient care, treatment documentation, and assigned student supervision |
-| `NURSE` | Queue viewing, appointments, and inventory/material management |
+| `NURSE` | Patient/queue visibility and inventory/material management |
 | `RECEPTION` | Patient registration, visits, payments, queue workflow |
 | `STUDENT` | Assigned patient/case workflow under supervision |
 
-## Feature Access Summary
+## Current Browser Feature Access
 
-| Feature | Main Roles |
+| Feature | Current browser behavior |
 | --- | --- |
-| User management | Admin |
-| Audit logs | Admin |
-| Reports | Admin |
-| Patient registration | Admin, Reception |
-| Patient profile viewing | Admin, Nurse, and Reception have broad access; Orthodontist, Dental Surgeon, and Student access is assignment-scoped |
-| Patient assignment | Reception can initiate assignment requests; orthodontists/dental surgeons approve requests addressed to them; orthodontists can assign dental surgeons and students; dental surgeons can assign students |
-| Visits | Admin, Reception, Nurse, clinical roles |
-| Clinic queue | All roles can view; Reception manages queue membership; Reception, Orthodontist, Dental Surgeon, and Student can update status |
-| Dental chart | Admin, assigned clinical roles, assigned students |
-| Documents | Admin and permitted patient-care roles |
-| Diagnosis/treatment notes | Clinical roles and assigned students, depending on permission |
-| Payments | Admin and Reception; read access for selected clinical roles |
-| Inventory | The UI exposes inventory to Admin and Nurse; every authenticated role can currently read inventory through the API; only Nurse can create, update, delete, restore, or adjust stock |
-| Student cases | Admin, Orthodontist, Dental Surgeon, Student |
+| User management | Administrator creates, edits, resets, deactivates, reactivates, and permanently deletes users |
+| Audit logs | Administrator has read-only access with search and filters |
+| Reports | Administrator views drill-down reports and exports PDF/print, XLSX, or CSV |
+| Patient registration/general editing | Receptionist creates and edits; Administrator manages inactive/permanent-delete lifecycle |
+| Patient profile viewing | Administrator, Nurse, and Receptionist have broad general access; Orthodontist, Dental Surgeon, and Student access is assignment-scoped |
+| Patient assignment | Receptionist requests clinician changes; target clinicians approve/reject; Orthodontist directly assigns Dental Surgeons/Students; Dental Surgeon directly assigns Students |
+| Visits | All roles can view visits available within their patient scope; Receptionist schedules, changes status, and sends manual reminders in the UI |
+| Clinic queue | All roles view; Student view is assignment-scoped; Receptionist manages membership; Receptionist, Orthodontist, Dental Surgeon, and Student update status |
+| Patient history | Administrator reads; assigned Orthodontist, Dental Surgeon, and Student edit; consultant fields are Orthodontist-only |
+| Dental chart | Administrator reads; assigned Orthodontist, Dental Surgeon, and Student edit; Orthodontist manages version deletion/restoration |
+| Documents | Administrator and assigned clinical/Student roles read; assigned clinical/Student roles upload; Orthodontist manages trash |
+| Diagnosis | Administrator and assigned clinical/Student roles read; assigned clinical/Student roles create/edit; Orthodontist manages bin |
+| Treatment plans/notes | Administrator and Receptionist read; assigned clinical/Student roles create/edit; Orthodontist manages bin and supervisor-review type |
+| Payments | Administrator, Receptionist, and assigned Orthodontist/Dental Surgeon read; Receptionist creates/edits; Administrator manages bin |
+| Patient materials used | Administrator, Nurse, and assigned clinical/Student roles read; assigned clinical/Student roles create/edit; Administrator manages bin |
+| Materials/inventory | Administrator reads; Nurse creates, edits, restocks, deletes, restores, and permanently deletes through the UI |
+| Student cases | Administrator has oversight/cleanup; Orthodontist and Dental Surgeon supervise; Student updates assigned work |
+| Settings | Every role changes its own password; mandatory temporary-password change is enforced here |
 
 ## Assignment-Based Access
 
@@ -55,7 +61,14 @@ Examples:
 
 ## UI and API Scope
 
-Sidebar visibility is not always identical to backend API authorization. In particular, the inventory page is shown to Admin and Nurse users, while the current inventory read endpoints accept any authenticated role. Inventory mutations remain restricted to Nurse users in both the UI and API.
+Sidebar visibility is not always identical to backend API authorization. In particular:
+
+- inventory read endpoints accept any authenticated role, although the page is shown only to Administrator and Nurse;
+- the backend permission matrix permits patient creation for Administrator, although the current Patient Directory shows **Add New Patient** only to Receptionist;
+- the backend appointment matrix permits additional create/update operations for some roles, while the current Patient Profile shows appointment-management controls only to Receptionist; and
+- Administrator has broad backend clinical permissions, while the current Patient Profile deliberately presents several clinical tabs as read-only.
+
+The backend remains the final security boundary. The browser guide documents actions users can actually initiate through the current interface.
 
 ## Practical Maintenance Note
 

@@ -32,7 +32,9 @@ OrthoFlow is a web-based orthodontic clinic workflow automation system designed 
 4. [Testing and Validation](#testing-and-validation)
 5. [Conclusion](#conclusion)
 6. [Links](#links)
-7. [OrthoFlow Documentation](#orthoflow-documentation)
+7. [User and Technical Documentation](#user-and-technical-documentation)
+   - [Using OrthoFlow](#using-orthoflow)
+   - [Technical and Deployment Documentation](#technical-and-deployment-documentation)
 
 ## Introduction
 
@@ -76,30 +78,51 @@ The project provides a working digital workflow platform for orthodontic clinic 
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
 
-# OrthoFlow Documentation
+## User and Technical Documentation
 
 OrthoFlow is an orthodontics workflow automation system built for patient care, clinic queue handling, student case supervision, records management, reporting, and administrative auditing.
 
-This documentation is written for future maintainers, technical officers, IT staff, and project stakeholders who need to understand, deploy, and maintain the system.
+This documentation is written for clinical users, administrators, future maintainers, technical officers, IT staff, and project stakeholders who need to use, understand, deploy, or maintain the system.
 
-## Recommended Reading Order
+### Using OrthoFlow
+
+Start with these guides to understand how the application works in day-to-day use:
+
+1. [Accounts, Sign-In, and Access](accounts-and-access.md) — account creation, temporary passwords, Google Sign-In, sessions, deactivation, and role-aware navigation.
+2. [Complete Feature Guide](feature-guide.md) — every major page and feature, including patients, visits, history, dental charts, documents, notes, materials, payments, queue, cases, reports, and audit logs.
+3. [Role and End-to-End Workflows](role-workflows.md) — practical workflows for each role and complete patient, appointment, clinical, and Student-supervision journeys.
+4. [Status and Lifecycle Reference](status-and-lifecycle-reference.md) — statuses, transitions, recycle bins, permanent deletion, and audit behavior.
+5. [Roles and Permissions](roles-and-permissions.md) — concise feature-access matrix and assignment-scope rules.
+
+#### Choose by task
+
+| I need to… | Read |
+| --- | --- |
+| Create a user or recover account access | [Accounts, Sign-In, and Access](accounts-and-access.md) |
+| Understand a screen or feature | [Complete Feature Guide](feature-guide.md) |
+| Follow the correct sequence for my role | [Role and End-to-End Workflows](role-workflows.md) |
+| Understand a status or deletion state | [Status and Lifecycle Reference](status-and-lifecycle-reference.md) |
+| Check who can perform an action | [Roles and Permissions](roles-and-permissions.md) |
+| Install or run the system locally | [Local Development](local-development.md) |
+| Deploy or maintain production | [Technical and Deployment Documentation](#technical-and-deployment-documentation) |
+
+### Technical and Deployment Documentation
 
 1. [System Overview](system-overview.md)
 2. [Architecture](architecture.md)
 3. [Data Storage](data-storage.md)
-4. [Cloud Deployment](cloud-deployment.md)
-5. [Environment Variables](environment-variables.md)
-6. [Operations and Maintenance](operations-maintenance.md)
-7. [Troubleshooting](troubleshooting.md)
+4. [Local Development](local-development.md)
+5. [Cloud Deployment](cloud-deployment.md)
+6. [Environment Variables](environment-variables.md)
+7. [Operations and Maintenance](operations-maintenance.md)
+8. [Troubleshooting](troubleshooting.md)
 
-## Quick Links
+### Detailed Technical References
 
-- [Local Development](local-development.md)
-- [Roles and Permissions](roles-and-permissions.md)
 - [Detailed Production Deployment Runbook](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System/blob/main/codes/PRODUCTION_DEPLOYMENT_RUNBOOK.md)
 - [Cloudflare R2 Storage Notes](https://github.com/cepdnaclk/e23-co2060-Orthodontics-Workflow-Automation-System/blob/main/codes/Backend/docs/cloudflare-r2-storage.md)
 
-## Repository Layout
+### Repository Layout
 
 ```text
 .
@@ -110,7 +133,7 @@ This documentation is written for future maintainers, technical officers, IT sta
 └── README.md         Project entry point
 ```
 
-## Key Services Used in Production
+### Key Services Used in Production
 
 - Render for frontend and backend hosting.
 - Aiven MySQL for the production database.

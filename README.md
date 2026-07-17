@@ -27,13 +27,17 @@ The backend Docker deployment is important because dental chart PDF generation u
 
 Start here:
 
+- [Accounts, Sign-In, and Access](docs/accounts-and-access.md)
+- [Complete Feature Guide](docs/feature-guide.md)
+- [Role and End-to-End Workflows](docs/role-workflows.md)
+- [Status and Lifecycle Reference](docs/status-and-lifecycle-reference.md)
+- [Roles and Permissions](docs/roles-and-permissions.md)
 - [System Overview](docs/system-overview.md)
 - [Architecture](docs/architecture.md)
 - [Local Development](docs/local-development.md)
 - [Cloud Deployment](docs/cloud-deployment.md)
 - [Environment Variables](docs/environment-variables.md)
 - [Data Storage](docs/data-storage.md)
-- [Roles and Permissions](docs/roles-and-permissions.md)
 - [Operations and Maintenance](docs/operations-maintenance.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
