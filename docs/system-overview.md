@@ -21,6 +21,8 @@ The system helps the clinic manage:
 - reports and analytics
 - audit logs for system activity
 
+For a screen-by-screen explanation, see the [Complete Feature Guide](feature-guide.md). For account creation and login behavior, see [Accounts, Sign-In, and Access](accounts-and-access.md).
+
 ## Main Parts
 
 ### Frontend
